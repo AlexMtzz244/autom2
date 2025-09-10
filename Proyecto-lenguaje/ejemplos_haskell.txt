@@ -1,0 +1,141 @@
+module Main where
+
+sumar :: Integer -> Integer -> Integer
+sumar x y = x + y
+
+numeros = [42, 3.14, 1.52]
+texto = "Hola mundo"
+lista = [1..5]
+
+main :: IO ()
+main = do
+    let x = 10
+    let y = 20
+    if x <= y
+    then putStrLn texto
+    else putStrLn "Error"
+    in if area <= 0 
+       then error "Dimensiones inválidas"
+       else area
+
+ejemploTupla :: (Int, String, Bool)
+ejemploTupla = (42, "test", True)
+
+ejemploLista :: [Int]
+ejemploLista = [1..10]
+
+procesarValor :: Maybe Int -> String
+procesarValor valor = 
+main :: IO ()
+main = do
+    let suma = 1 + 2             
+    let resta = 10 - 5           
+    let multiplicacion = 3 * 4
+    let division = 15 / 3
+    let modulo = 7 mod 2
+    let concatenacion = "Hola" ++ " Mundo"  
+    let comparacion1 = 5 <= 6    
+    let comparacion2 = 7 >= 3    
+    let comparacion3 = 4 == 4    
+    let comparacion4 = 5 /= 6    
+    let logica1 = True && False  
+    let logica2 = True || False  
+    let composicion = f . g      
+    let constructor = 1:[]       
+    putStrLn "Análisis léxico completado"
+
+-- 3. Pattern Matching
+fibonacci :: Integer -> Integer
+fibonacci 0 = 0
+fibonacci 1 = 1
+fibonacci n = fibonacci (n-1) + fibonacci (n-2)
+
+-- 4. Guardas y donde (where)
+absoluto :: Int -> Int
+absoluto n
+    | n >= 0    = n
+    | otherwise = -n
+
+-- 5. Tipos de datos y constructores
+data Arbol a = Vacio | Nodo a (Arbol a) (Arbol a)
+
+-- 6. Listas y operaciones
+numeros = [1, 2, 3, 4, 5]
+duplicados = map (*2) numeros
+suma_lista = sum [1..10]
+
+-- 7. Tuplas
+coordenada :: (Int, Int)
+coordenada = (10, 20)
+
+-- 8. Let-in y expresiones
+area radio = let
+    pi = 3.14159
+    area_circulo = pi * radio * radio
+    in area_circulo
+
+-- 9. Diferentes tipos de números
+decimales = [
+    3.14159,      -- decimal normal
+    -42.001,      -- decimal negativo
+    1.5e-10,      -- notación científica
+    0xFF,         -- hexadecimal
+    0o77,         -- octal
+    0b1010        -- binario
+    ]
+
+-- 10. Strings y caracteres
+saludo = "¡Hola, mundo!"
+escape_chars = "Línea 1\nLínea 2\tTabulado"
+char_simple = 'a'
+char_escape = '\n'
+
+=======================================
+EJEMPLOS DE CÓDIGO HASKELL INCORRECTO
+=======================================
+
+-- 1. Identificadores inválidos
+123variable = 42          -- No puede comenzar con número
+@nombre = "Juan"          -- @ no es válido
+variable# = 10           -- # no es válido
+mi-variable = 20         -- - no es válido en identificadores
+
+-- 2. Tipos mal declarados
+tipo :: integer          -- Integer debe comenzar con mayúscula
+Nombre :: String         -- nombre de variable no puede comenzar con mayúscula
+
+-- 3. Caracteres y strings mal formados
+char_malo = 'ab'         -- más de un carácter
+string_malo = "String sin cerrar
+otro_malo = 'sin cerrar
+
+-- 4. Operadores inválidos
+x $$ y                   -- operador inválido
+a ?? b                   -- operador inválido
+x %% y                   -- operador inválido
+
+-- 5. Símbolos no permitidos
+lista = [1, 2, 3}       -- mezclando corchetes y llaves
+-- Función principal con varios operadores
+main :: IO ()
+main = do
+    let estudiante = Estudiante "Juan" 20 8.5
+    let notas = [7.5, 8.0, 9.0]
+    let promedio = calcularPromedio "Juan" notas
+    let aprobado = promedio >= 6.0 && promedio <= 10.0
+    putStrLn $ "Promedio: " ++ show promedio
+
+{- Elementos léxicos incluidos:
+   - Keywords (module, where, data, let, in, if, then, else, do)
+   - Identificadores (Persona, Estudiante, calcularPromedio)
+   - Números (20, 3.14159, 1.5e2, 6.0)
+   - Strings ("Juan")
+   - Operadores (+, -, /, >=, <=, &&)
+   - Símbolos especiales ([, ], (, ), =, ->, ::)
+   - Comentarios (-- y {- -})
+-}
+
+-- 10. Expresiones incompletas o mal formadas
+[ 1, 2, 3              -- lista sin cerrar
+( x, y,                -- tupla sin cerrar
+if x then              -- if incompleto
