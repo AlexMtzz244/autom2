@@ -6,8 +6,8 @@ import java.util.regex.*;
 public class HaskellLexer {
     private static final Map<Token.Type, Pattern> patterns = new LinkedHashMap<>();
     static {
-        // Keywords de Haskell (incluye tipos básicos)
-        patterns.put(Token.Type.KEYWORD, Pattern.compile("\\b(let|in|if|then|else|case|of|data|type|where|module|import|deriving|class|instance|newtype|do|default|foreign|forall|hiding|qualified|as|family|role|pattern|static|stock|anyclass|via|Int|Integer|Float|Double|Bool|Char|String)\\b"));
+        // Keywords de Haskell (incluye tipos básicos y ciclos hipotéticos)
+        patterns.put(Token.Type.KEYWORD, Pattern.compile("\\b(let|in|if|then|else|case|of|data|type|where|module|import|deriving|class|instance|newtype|do|default|foreign|forall|hiding|qualified|as|family|role|pattern|static|stock|anyclass|via|Int|Integer|Float|Double|Bool|Char|String|while|for|loop|ciclo)\\b"));
         
         // Booleanos
         patterns.put(Token.Type.BOOLEAN, Pattern.compile("\\b(True|False)\\b"));

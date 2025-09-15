@@ -38,6 +38,6 @@ public class Token {
 
     @Override
     public String toString() {
-        return String.format("[%s] '%s' (línea: %d, pos: %d)", type, value, line, position);
+        return String.format("'%s' (línea: %d, pos: %d) [%s]", value, line, position, type);
     }
 }

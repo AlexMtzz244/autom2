@@ -139,3 +139,45 @@ main = do
 [ 1, 2, 3              -- lista sin cerrar
 ( x, y,                -- tupla sin cerrar
 if x then              -- if incompleto
+
+=======================================
+EJEMPLOS PARA VALIDACIÓN SEMÁNTICA DE CICLOS
+(Aunque Haskell no tiene ciclos imperativos)
+=======================================
+
+-- CICLOS BIEN FORMADOS (no deben generar errores)
+while (x > 0) {
+    x = x - 1
+}
+
+for (i = 0; i < 10; i++) {
+    print i
+}
+
+loop (condition) {
+    action()
+}
+
+ciclo (contador <= 5) {
+    contador = contador + 1
+}
+
+-- CICLOS MAL FORMADOS (deben generar errores semánticos)
+while (x > 0)
+
+for (i = 0; i < 10)
+
+while {
+    x = x - 1
+}
+
+ciclo
+
+loop (x > 5
+
+-- CICLOS ANIDADOS BIEN FORMADOS
+while (x > 0) {
+    for (i = 0; i < 5; i++) {
+        process()
+    }
+}
