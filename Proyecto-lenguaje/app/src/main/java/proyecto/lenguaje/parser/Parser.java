@@ -15,6 +15,7 @@ import java.util.*;
 public class Parser {
     private final List<Token> tokens;
     private int pos = 0;
+    private List<String> errors = new ArrayList<>();
 
     public Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -22,26 +23,79 @@ public class Parser {
 
     public AstNode parseProgram() {
         List<AstNode> items = new ArrayList<>();
+        errors.clear(); // Limpiar errores anteriores
+        
         while (!isAtEnd()) {
-            // intentar parsear declaración (ident = expr) o expresión
-            AstNode item = parseTopLevel();
-            if (item != null) items.add(item);
-            else break;
+            try {
+                // intentar parsear declaración (ident = expr) o expresión
+                AstNode item = parseTopLevel();
+                if (item != null) {
+                    items.add(item);
+                } else {
+                    // Si no se puede parsear, avanzar para evitar bucle infinito
+                    advance();
+                }
+            } catch (ParseException ex) {
+                // Capturar error y continuar
+                errors.add(ex.getMessage());
+                // Intentar recuperarse avanzando hasta el siguiente token potencial
+                recoverFromError();
+            }
         }
+        
+        // Si hay errores, lanzar excepción con todos los errores
+        if (!errors.isEmpty()) {
+            StringBuilder allErrors = new StringBuilder();
+            for (int i = 0; i < errors.size(); i++) {
+                allErrors.append("Error ").append(i + 1).append(": ").append(errors.get(i));
+                if (i < errors.size() - 1) {
+                    allErrors.append("\n");
+                }
+            }
+            throw new ParseException(allErrors.toString());
+        }
+        
         return new ProgramNode(items);
+    }
+    
+    private void recoverFromError() {
+        // Estrategia de recuperación: avanzar hasta encontrar un token que podría iniciar una nueva declaración
+        while (!isAtEnd()) {
+            Token current = peek();
+            if (current.getType() == Token.Type.IDENTIFIER_VAR) {
+                // Verificar si el siguiente es '=' para una posible declaración
+                Token next = (pos + 1) < tokens.size() ? tokens.get(pos + 1) : null;
+                if (next != null && "=".equals(next.getValue())) {
+                    break; // Posible inicio de nueva declaración
+                }
+            }
+            advance();
+        }
     }
 
     private AstNode parseTopLevel() {
         if (isAtEnd()) return null;
+        
         // if next is identifier and following token is '=', parse decl
         if (peekTypeIs(Token.Type.IDENTIFIER_VAR) && peekNextValueEquals("=")) {
             Token id = advance();
             consumeValue("="); // skip =
-            AstNode expr = parseExpression();
-            return new DeclNode(id.getValue(), expr);
+            try {
+                AstNode expr = parseExpression();
+                return new DeclNode(id.getValue(), expr);
+            } catch (ParseException ex) {
+                // Re-lanzar con contexto de la declaración
+                throw new ParseException("En declaración de '" + id.getValue() + "': " + ex.getMessage());
+            }
         }
+        
         // otherwise parse expression
-        return parseExpression();
+        try {
+            return parseExpression();
+        } catch (ParseException ex) {
+            // Re-lanzar con contexto
+            throw new ParseException("En expresión: " + ex.getMessage());
+        }
     }
 
     private AstNode parseExpression() {

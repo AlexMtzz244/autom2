@@ -61,11 +61,11 @@ public class IDEFrame extends JFrame {
         rightPanel.add(outputScroll, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();
-        lexButton = new JButton("Validar Léxicamente");
-        parseButton = new JButton("Parsear"); // nuevo botón
+        lexButton = new JButton("Análisis Léxico");
+        parseButton = new JButton("Análisis Sintáctico");
         saveButton = new JButton("Guardar Cambios");
         saveAsButton = new JButton("Guardar Como");
-        semanticButton = new JButton("Validar Ciclos");
+        semanticButton = new JButton("Validación Semántica");
         buttonPanel.add(lexButton);
         buttonPanel.add(parseButton); // añadir al panel
         buttonPanel.add(semanticButton);
@@ -218,9 +218,26 @@ public class IDEFrame extends JFrame {
                               + "</body></html>";
             outputArea.setText(htmlResult);
         } catch (Parser.ParseException ex) {
-            String err = "<html><body style='font-family: monospace; color: red; white-space: pre;'>Parse error: "
-                       + escapeHtml(ex.getMessage()) + "</body></html>";
-            outputArea.setText(err);
+            // Formatear múltiples errores, cada uno en una línea separada
+            String errorMessage = ex.getMessage();
+            String[] errors = errorMessage.split("\\n");
+            
+            StringBuilder formattedErrors = new StringBuilder();
+            formattedErrors.append("<span style='color: red; font-weight: bold;'>❌ ERRORES SINTÁCTICOS ENCONTRADOS:</span><br><br>");
+            
+            for (int i = 0; i < errors.length; i++) {
+                String error = errors[i].trim();
+                if (!error.isEmpty()) {
+                    formattedErrors.append("<span style='color: red;'>• Error ").append(i + 1).append(":</span> ")
+                                  .append(escapeHtml(error))
+                                  .append("<br>");
+                }
+            }
+            
+            String htmlResult = "<html><body style='font-family: monospace; white-space: pre;'>" 
+                              + formattedErrors.toString() 
+                              + "</body></html>";
+            outputArea.setText(htmlResult);
         } catch (Exception ex) {
             String err = "<html><body style='font-family: monospace; color: red; white-space: pre;'>Unexpected error: "
                        + escapeHtml(ex.toString()) + "</body></html>";

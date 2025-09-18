@@ -48,3 +48,34 @@ aplicacion1 = funcion x
 aplicacion2 = proceso nombre apellido
 aplicacion3 = calculo suma resta
 
+while (x > 0) {
+    x = x - 1
+    proceso()
+}
+
+for (i = 1; i <= 10; i++) {
+    calcular(i)
+    mostrar(i)
+}
+
+loop (activo) {
+    verificar()
+    actualizar()
+}
+
+ciclo (contador < limite) {
+    incrementar()
+}
+
+while (condicion)
+
+for (j = 0; j < 5)
+
+loop (estado > 0
+
+ciclo
+
+while {
+    operacion()
+}
+

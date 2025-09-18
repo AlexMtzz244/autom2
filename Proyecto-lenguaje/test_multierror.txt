@@ -1,0 +1,25 @@
+-- Ejemplo con múltiples errores sintácticos para probar el parser
+
+-- Error 1: falta paréntesis de cierre
+resultado = if (5 > 3 then "verdadero" else "falso"
+
+-- Error 2: falta 'in' en let
+numero = let x = 10 x + 5
+
+-- Error 3: símbolo inválido
+valor = 42 @ 8
+
+-- Declaración válida
+nombre = "Juan"
+
+-- Error 4: paréntesis mal balanceados
+suma = ((5 + 3) * 2
+
+-- Otra declaración válida
+lista = [1, 2, 3]
+
+-- Error 5: operador inválido en posición incorrecta
+error = + 5 * 3
+
+-- Declaración válida final
+estado = True
