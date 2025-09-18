@@ -1,236 +1,50 @@
--- ===============================================
--- EJEMPLOS PARA ANÁLISIS LÉXICO ROBUSTO
--- Pruebas de identificadores con caracteres inválidos
--- ===============================================
+x = 10
+y = 20
+z = 5
 
--- Código válido (no debe generar errores)
-module TestLexer where
+nombre = "Juan"
+apellido = "Perez"
+ciudad = "Madrid"
 
-variable_valida = 42
-nombre' = "Juan"
-Tipo_Constructor = True
-funcion_con_numeros123 = 5
+activo = True
+inactivo = False
 
--- Identificadores con caracteres inválidos (deben generar errores)
-el@se = 10          -- @ no válido en identificador
-var#iable = 20      -- # no válido
-nom$bre = "test"    -- $ no válido
-tipo%raro = 30      -- % no válido
-func&ion = 40       -- & no válido
-vari*able = 50      -- * no válido
-dat+o = 60          -- + no válido (cuando está dentro del identificador)
+caracter = 'a'
+letra = 'Z'
+digito = '5'
 
--- Palabras reservadas con caracteres inválidos
-l@et x = 10         -- let con @
-i#f True            -- if con #
-el$se               -- else con $
-whe%re              -- where con %
-d&ata               -- data con &
+decimal = 3.14
+precio = 99.99
+temperatura = -10.5
 
--- Secuencias mixtas problemáticas
-abc@def#ghi = 100   -- múltiples caracteres inválidos
-test123@456 = 200   -- mezcla de números y caracteres inválidos
-Var_@#$%_Name = 300 -- identificador de tipo con múltiples símbolos
-
--- Casos límite
-@ = 10              -- solo carácter inválido
-@@ = 20             -- múltiples caracteres inválidos seguidos
-abc@ = 30           -- carácter inválido al final
-@abc = 40           -- carácter inválido al inicio
-
--- Identificadores válidos que NO deben marcar error
-variable_con_underscore = 1
-nombre' = 2
-Tipo'Constructor = 3
-funcion123 = 4
-_identificador = 5
-
--- Operadores válidos (no deben confundirse con errores)
 suma = x + y
-producto = a * b  
-asignacion = valor
-composicion = f . g
+resta = y - x
+producto = x * z
+cociente = y / z
 
-module Main where
+mayor = x > z
+menor = z < y
+iguales = x == 10
+diferentes = y /= z
 
-sumar :: Integer -> Integer -> Integer
-sumar x y = x + y
+ambos = activo && inactivo
+alguno = activo || inactivo
 
-numeros = [42, 3.14, 1.52]
-texto = "Hola mundo"
-lista = [1..5]
+lista1 = [1, 2, 3, 4, 5]
+lista2 = ["Ana", "Luis", "María"]
+lista3 = [True, False, True]
+listaVacia = []
 
-main :: IO ()
-main = do
-    let x = 10
-    let y = 20
-    if x <= y
-    then putStrLn texto
-    else putStrLn "Error"
-    in if area <= 0 
-       then error "Dimensiones inválidas"
-       else area
+tupla1 = (x, y)
+tupla2 = (nombre, 25)
+tupla3 = ("datos", 100, True)
+tuplaVacia = ()
 
-ejemploTupla :: (Int, String, Bool)
-ejemploTupla = (42, "test", True)
+operacion1 = suma + producto
+operacion2 = mayor && alguno
+operacion3 = (x + y) * z
 
-ejemploLista :: [Int]
-ejemploLista = [1..10]
+aplicacion1 = funcion x
+aplicacion2 = proceso nombre apellido
+aplicacion3 = calculo suma resta
 
-procesarValor :: Maybe Int -> String
-procesarValor valor = 
-main :: IO ()
-main = do
-    let suma = 1 + 2             
-    let resta = 10 - 5           
-    let multiplicacion = 3 * 4
-    let division = 15 / 3
-    let modulo = 7 mod 2
-    let concatenacion = "Hola" ++ " Mundo"  
-    let comparacion1 = 5 <= 6    
-    let comparacion2 = 7 >= 3    
-    let comparacion3 = 4 == 4    
-    let comparacion4 = 5 /= 6    
-    let logica1 = True && False  
-    let logica2 = True || False  
-    let composicion = f . g      
-    let constructor = 1:[]       
-    putStrLn "Análisis léxico completado"
-
--- 3. Pattern Matching
-fibonacci :: Integer -> Integer
-fibonacci 0 = 0
-fibonacci 1 = 1
-fibonacci n = fibonacci (n-1) + fibonacci (n-2)
-
--- 4. Guardas y donde (where)
-absoluto :: Int -> Int
-absoluto n
-    | n >= 0    = n
-    | otherwise = -n
-
--- 5. Tipos de datos y constructores
-data Arbol a = Vacio | Nodo a (Arbol a) (Arbol a)
-
--- 6. Listas y operaciones
-numeros = [1, 2, 3, 4, 5]
-duplicados = map (*2) numeros
-suma_lista = sum [1..10]
-
--- 7. Tuplas
-coordenada :: (Int, Int)
-coordenada = (10, 20)
-
--- 8. Let-in y expresiones
-area radio = let
-    pi = 3.14159
-    area_circulo = pi * radio * radio
-    in area_circulo
-
--- 9. Diferentes tipos de números
-decimales = [
-    3.14159,      -- decimal normal
-    -42.001,      -- decimal negativo
-    1.5e-10,      -- notación científica
-    0xFF,         -- hexadecimal
-    0o77,         -- octal
-    0b1010        -- binario
-    ]
-
--- 10. Strings y caracteres
-saludo = "¡Hola, mundo!"
-escape_chars = "Línea 1\nLínea 2\tTabulado"
-char_simple = 'a'
-char_escape = '\n'
-
-=======================================
-EJEMPLOS DE CÓDIGO HASKELL INCORRECTO
-=======================================
-
--- 1. Identificadores inválidos
-123variable = 42          -- No puede comenzar con número
-@nombre = "Juan"          -- @ no es válido
-variable# = 10           -- # no es válido
-mi-variable = 20         -- - no es válido en identificadores
-
--- 2. Tipos mal declarados
-tipo :: integer          -- Integer debe comenzar con mayúscula
-Nombre :: String         -- nombre de variable no puede comenzar con mayúscula
-
--- 3. Caracteres y strings mal formados
-char_malo = 'ab'         -- más de un carácter
-string_malo = "String sin cerrar
-otro_malo = 'sin cerrar
-
--- 4. Operadores inválidos
-x $$ y                   -- operador inválido
-a ?? b                   -- operador inválido
-x %% y                   -- operador inválido
-
--- 5. Símbolos no permitidos
-lista = [1, 2, 3}       -- mezclando corchetes y llaves
--- Función principal con varios operadores
-main :: IO ()
-main = do
-    let estudiante = Estudiante "Juan" 20 8.5
-    let notas = [7.5, 8.0, 9.0]
-    let promedio = calcularPromedio "Juan" notas
-    let aprobado = promedio >= 6.0 && promedio <= 10.0
-    putStrLn $ "Promedio: " ++ show promedio
-
-{- Elementos léxicos incluidos:
-   - Keywords (module, where, data, let, in, if, then, else, do)
-   - Identificadores (Persona, Estudiante, calcularPromedio)
-   - Números (20, 3.14159, 1.5e2, 6.0)
-   - Strings ("Juan")
-   - Operadores (+, -, /, >=, <=, &&)
-   - Símbolos especiales ([, ], (, ), =, ->, ::)
-   - Comentarios (-- y {- -})
--}
-
--- 10. Expresiones incompletas o mal formadas
-[ 1, 2, 3              -- lista sin cerrar
-( x, y,                -- tupla sin cerrar
-if x then              -- if incompleto
-
-=======================================
-EJEMPLOS PARA VALIDACIÓN SEMÁNTICA DE CICLOS
-(Aunque Haskell no tiene ciclos imperativos)
-=======================================
-
--- CICLOS BIEN FORMADOS (no deben generar errores)
-while (x > 0) {
-    x = x - 1
-}
-
-for (i = 0; i < 10; i++) {
-    print i
-}
-
-loop (condition) {
-    action()
-}
-
-ciclo (contador <= 5) {
-    contador = contador + 1
-}
-
--- CICLOS MAL FORMADOS (deben generar errores semánticos)
-while (x > 0)
-
-for (i = 0; i < 10)
-
-while {
-    x = x - 1
-}
-
-ciclo
-
-loop (x > 5
-
--- CICLOS ANIDADOS BIEN FORMADOS
-while (x > 0) {
-    for (i = 0; i < 5; i++) {
-        process()
-    }
-}

@@ -135,8 +135,17 @@ public class IDEFrame extends JFrame {
         List<Token> tokens = lexer.tokenize(code);
         String result = SemanticValidator.validateCycles(tokens);
         
+        // Agregar mensaje de éxito al inicio si no hay errores semánticos
+        String successPrefix = "";
+        if (!result.contains("ERROR") && !result.contains("ERRORES SEMÁNTICOS")) {
+            successPrefix = "<span style='color: green; font-weight: bold;'>✅ VALIDACIÓN SEMÁNTICA EXITOSA</span><br>" +
+                           "<span style='color: green;'>No se encontraron errores semánticos en el código.</span><br><br>" +
+                           "<span style='color: blue; font-weight: bold;'>Resultado del análisis:</span><br><br>";
+        }
+        
         // Convertir texto plano a HTML básico para mantener formato
         String htmlResult = "<html><body style='font-family: monospace; white-space: pre;'>" 
+                          + successPrefix
                           + escapeHtml(result).replace("\n", "<br>") 
                           + "</body></html>";
         outputArea.setText(htmlResult);
@@ -169,7 +178,10 @@ public class IDEFrame extends JFrame {
         sb.append("Total de tokens: ").append(tokens.size()).append("<br>");
         sb.append("Errores léxicos: ").append(errorCount).append("<br>");
         
-        if (errorCount > 0) {
+        if (errorCount == 0) {
+            sb.append("<br><span style='color: green; font-weight: bold;'>✅ ANÁLISIS LÉXICO EXITOSO</span><br>");
+            sb.append("<span style='color: green;'>Todos los tokens han sido reconocidos correctamente.</span><br>");
+        } else {
             sb.append("<br><strong style='color: red;'>--- ERRORES ENCONTRADOS ---</strong><br>");
             for (Token t : tokens) {
                 if (t.getType() == Token.Type.ERROR) {
@@ -194,7 +206,14 @@ public class IDEFrame extends JFrame {
         try {
             AstNode program = parser.parseProgram();
             String tree = program.toTreeString();
+            
+            // Mensaje de éxito agregado
+            String successMessage = "<span style='color: green; font-weight: bold;'>✅ ANÁLISIS SINTÁCTICO EXITOSO</span><br>" +
+                                   "<span style='color: green;'>El programa ha sido analizado correctamente sin errores sintácticos.</span><br><br>" +
+                                   "<span style='color: blue; font-weight: bold;'>Árbol de Sintaxis Abstracta (AST):</span><br><br>";
+            
             String htmlResult = "<html><body style='font-family: monospace; white-space: pre;'>" 
+                              + successMessage
                               + escapeHtml(tree).replace("\n", "<br>") 
                               + "</body></html>";
             outputArea.setText(htmlResult);
