@@ -1,3 +1,56 @@
+-- ===============================================
+-- EJEMPLOS PARA ANÁLISIS LÉXICO ROBUSTO
+-- Pruebas de identificadores con caracteres inválidos
+-- ===============================================
+
+-- Código válido (no debe generar errores)
+module TestLexer where
+
+variable_valida = 42
+nombre' = "Juan"
+Tipo_Constructor = True
+funcion_con_numeros123 = 5
+
+-- Identificadores con caracteres inválidos (deben generar errores)
+el@se = 10          -- @ no válido en identificador
+var#iable = 20      -- # no válido
+nom$bre = "test"    -- $ no válido
+tipo%raro = 30      -- % no válido
+func&ion = 40       -- & no válido
+vari*able = 50      -- * no válido
+dat+o = 60          -- + no válido (cuando está dentro del identificador)
+
+-- Palabras reservadas con caracteres inválidos
+l@et x = 10         -- let con @
+i#f True            -- if con #
+el$se               -- else con $
+whe%re              -- where con %
+d&ata               -- data con &
+
+-- Secuencias mixtas problemáticas
+abc@def#ghi = 100   -- múltiples caracteres inválidos
+test123@456 = 200   -- mezcla de números y caracteres inválidos
+Var_@#$%_Name = 300 -- identificador de tipo con múltiples símbolos
+
+-- Casos límite
+@ = 10              -- solo carácter inválido
+@@ = 20             -- múltiples caracteres inválidos seguidos
+abc@ = 30           -- carácter inválido al final
+@abc = 40           -- carácter inválido al inicio
+
+-- Identificadores válidos que NO deben marcar error
+variable_con_underscore = 1
+nombre' = 2
+Tipo'Constructor = 3
+funcion123 = 4
+_identificador = 5
+
+-- Operadores válidos (no deben confundirse con errores)
+suma = x + y
+producto = a * b  
+asignacion = valor
+composicion = f . g
+
 module Main where
 
 sumar :: Integer -> Integer -> Integer
