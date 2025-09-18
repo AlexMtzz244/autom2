@@ -1,17 +1,20 @@
-
-    package proyecto.lenguaje.gui;
+package proyecto.lenguaje.gui;
 
 import proyecto.lenguaje.lexer.*;
+import proyecto.lenguaje.parser.*; // Nuevo import para el parser
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
 import java.util.List;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class IDEFrame extends JFrame {
     private JTextArea codeEditor;
     private JTextArea lineNumbers;
     private JEditorPane outputArea;
     private JButton lexButton, saveButton, saveAsButton, semanticButton;
+    private JButton parseButton; // nuevo botón
     private JFileChooser fileChooser;
     private File currentFile;
     private JScrollPane mainScrollPane; // Nuevo scroll pane principal
@@ -59,10 +62,12 @@ public class IDEFrame extends JFrame {
 
         JPanel buttonPanel = new JPanel();
         lexButton = new JButton("Validar Léxicamente");
+        parseButton = new JButton("Parsear"); // nuevo botón
         saveButton = new JButton("Guardar Cambios");
         saveAsButton = new JButton("Guardar Como");
         semanticButton = new JButton("Validar Ciclos");
         buttonPanel.add(lexButton);
+        buttonPanel.add(parseButton); // añadir al panel
         buttonPanel.add(semanticButton);
         buttonPanel.add(saveButton);
         buttonPanel.add(saveAsButton);
@@ -75,10 +80,21 @@ public class IDEFrame extends JFrame {
 
         fileChooser = new JFileChooser();
 
-        lexButton.addActionListener(e -> runLexicalAnalysis());
-        semanticButton.addActionListener(e -> runSemanticCycleValidation());
-        saveButton.addActionListener(e -> saveFile());
-        saveAsButton.addActionListener(e -> saveFileAs());
+        lexButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) { runLexicalAnalysis(); }
+        });
+        semanticButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) { runSemanticCycleValidation(); }
+        });
+        parseButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) { runParser(); }
+        });
+        saveButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) { saveFile(); }
+        });
+        saveAsButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) { saveFileAs(); }
+        });
         updateLineNumbers(); // Inicializar números de línea
     }
 
@@ -92,11 +108,24 @@ public class IDEFrame extends JFrame {
             numbers.append(i).append("\n");
         }
         lineNumbers.setText(numbers.toString());
-        // Actualizar el tamaño preferido de los números de línea
-        int width = String.valueOf(lines).length();
+
+        // Calcular ancho según número de dígitos (existente)
+        int widthDigits = String.valueOf(lines).length();
         int charWidth = lineNumbers.getFontMetrics(lineNumbers.getFont()).charWidth('0');
-        lineNumbers.setPreferredSize(new Dimension((width + 2) * charWidth + 10, lineNumbers.getPreferredSize().height));
+
+        // Nuevo: calcular la altura total en píxeles y actualizar preferredSize
+        int lineHeight = lineNumbers.getFontMetrics(lineNumbers.getFont()).getHeight();
+        int totalHeight = lineHeight * lines;
+
+        lineNumbers.setPreferredSize(new Dimension((widthDigits + 2) * charWidth + 10, totalHeight));
         lineNumbers.revalidate();
+        lineNumbers.repaint();
+
+        // Revalidar y repintar el scroll pane (para forzar actualización del row header y el scroll)
+        if (mainScrollPane != null) {
+            mainScrollPane.revalidate();
+            mainScrollPane.repaint();
+        }
     }
 
     // Validación semántica de ciclos
@@ -154,6 +183,30 @@ public class IDEFrame extends JFrame {
         
         sb.append("</body></html>");
         outputArea.setText(sb.toString());
+    }
+    
+    // Nuevo: ejecutar lexer + parser y mostrar árbol o errores
+    private void runParser() {
+        HaskellLexer lexer = new HaskellLexer();
+        String code = codeEditor.getText();
+        List<Token> tokens = lexer.tokenize(code);
+        Parser parser = new Parser(tokens);
+        try {
+            AstNode program = parser.parseProgram();
+            String tree = program.toTreeString();
+            String htmlResult = "<html><body style='font-family: monospace; white-space: pre;'>" 
+                              + escapeHtml(tree).replace("\n", "<br>") 
+                              + "</body></html>";
+            outputArea.setText(htmlResult);
+        } catch (Parser.ParseException ex) {
+            String err = "<html><body style='font-family: monospace; color: red; white-space: pre;'>Parse error: "
+                       + escapeHtml(ex.getMessage()) + "</body></html>";
+            outputArea.setText(err);
+        } catch (Exception ex) {
+            String err = "<html><body style='font-family: monospace; color: red; white-space: pre;'>Unexpected error: "
+                       + escapeHtml(ex.toString()) + "</body></html>";
+            outputArea.setText(err);
+        }
     }
     
     // Método auxiliar para escapar caracteres HTML
