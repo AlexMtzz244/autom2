@@ -1,0 +1,26 @@
+contador = 0
+limite = 100
+paso = 1
+activo = True
+completado = True
+temperatura = 25.5
+
+while (contador < limite) {
+    contador = contador + paso
+    procesamiento = calcular contador
+}
+
+for (i = 1; i <= 10; i++) {
+    resultado = funcion i
+    almacenar = resultado
+}
+
+loop (activo && completado) {
+    verificacion = verificar estado
+    actualizacion = actualizar datos
+}
+
+ciclo (temperatura > 0) {
+    medicion = medir temperatura
+    registro = guardar medicion
+}

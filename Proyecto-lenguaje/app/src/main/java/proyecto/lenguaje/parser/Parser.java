@@ -99,7 +99,7 @@ public class Parser {
     }
 
     private AstNode parseExpression() {
-        // handle if / let specially
+        // handle if / let / cycles specially
         if (matchKeyword("if")) {
             AstNode cond = parseExpression();
             if (!matchKeyword("then")) throw error("expected 'then' after if condition");
@@ -117,6 +117,20 @@ public class Parser {
             if (!matchKeyword("in")) throw error("expected 'in' after let binding");
             AstNode body = parseExpression();
             return new LetNode(name, bound, body);
+        }
+        
+        // Handle cycle structures
+        if (matchKeyword("while")) {
+            return parseWhileLoop();
+        }
+        if (matchKeyword("for")) {
+            return parseForLoop();
+        }
+        if (matchKeyword("loop")) {
+            return parseLoop();
+        }
+        if (matchKeyword("ciclo")) {
+            return parseCiclo();
         }
         // binary operators with left-assoc simple precedence
         AstNode left = parseApplication();
@@ -149,6 +163,14 @@ public class Parser {
     private boolean startsPrimary(Token t) {
         if (t == null) return false;
         Token.Type ty = t.getType();
+        
+        // Check for cycle keywords
+        if (ty == Token.Type.KEYWORD) {
+            String keyword = t.getValue();
+            return keyword.equals("while") || keyword.equals("for") || 
+                   keyword.equals("loop") || keyword.equals("ciclo");
+        }
+        
         return ty == Token.Type.IDENTIFIER_VAR || ty == Token.Type.IDENTIFIER_TYPE ||
                ty == Token.Type.INTEGER || ty == Token.Type.FLOAT ||
                ty == Token.Type.STRING || ty == Token.Type.CHAR ||
@@ -159,6 +181,28 @@ public class Parser {
     private AstNode parsePrimary() {
         if (isAtEnd()) throw error("unexpected end of input");
         Token t = peek();
+        
+        // Check for cycle keywords first
+        if (t.getType() == Token.Type.KEYWORD) {
+            String keyword = t.getValue();
+            if (keyword.equals("while")) {
+                advance(); // consume 'while'
+                return parseWhileLoop();
+            }
+            if (keyword.equals("for")) {
+                advance(); // consume 'for'
+                return parseForLoop();
+            }
+            if (keyword.equals("loop")) {
+                advance(); // consume 'loop'
+                return parseLoop();
+            }
+            if (keyword.equals("ciclo")) {
+                advance(); // consume 'ciclo'
+                return parseCiclo();
+            }
+        }
+        
         // literals and identifiers
         switch (t.getType()) {
             case INTEGER: case FLOAT: case STRING: case CHAR: case BOOLEAN:
@@ -245,6 +289,105 @@ public class Parser {
         Token p = peek();
         String where = (p == null) ? "EOF" : ("line " + p.getLine() + " pos " + p.getPosition());
         return new ParseException(msg + " at " + where);
+    }
+
+    // Cycle parsing methods
+    private AstNode parseWhileLoop() {
+        consumeType(Token.Type.TUPLE_START); // (
+        AstNode condition = parseExpression();
+        consumeType(Token.Type.TUPLE_END); // )
+        List<AstNode> body = parseBlock();
+        return new WhileNode(condition, body);
+    }
+    
+    private AstNode parseForLoop() {
+        consumeType(Token.Type.TUPLE_START); // (
+        
+        // Parse init (optional)
+        AstNode init = null;
+        if (!peekValueEquals(";")) {
+            init = parseExpression();
+        }
+        if (matchValue(";")) {
+            // continue
+        }
+        
+        // Parse condition (optional)
+        AstNode condition = null;
+        if (!peekValueEquals(";")) {
+            condition = parseExpression();
+        }
+        if (matchValue(";")) {
+            // continue
+        }
+        
+        // Parse increment (optional)
+        AstNode increment = null;
+        if (!peekTypeIs(Token.Type.TUPLE_END)) {
+            increment = parseExpression();
+        }
+        
+        consumeType(Token.Type.TUPLE_END); // )
+        List<AstNode> body = parseBlock();
+        return new ForNode(init, condition, increment, body);
+    }
+    
+    private AstNode parseLoop() {
+        consumeType(Token.Type.TUPLE_START); // (
+        AstNode condition = parseExpression();
+        consumeType(Token.Type.TUPLE_END); // )
+        List<AstNode> body = parseBlock();
+        return new LoopNode(condition, body);
+    }
+    
+    private AstNode parseCiclo() {
+        consumeType(Token.Type.TUPLE_START); // (
+        AstNode condition = parseExpression();
+        consumeType(Token.Type.TUPLE_END); // )
+        List<AstNode> body = parseBlock();
+        return new CicloNode(condition, body);
+    }
+    
+    private List<AstNode> parseBlock() {
+        // Consume opening brace
+        if (!matchSymbol("{")) {
+            throw error("expected '{' to start block");
+        }
+        
+        List<AstNode> statements = new ArrayList<>();
+        
+        while (!peekSymbolEquals("}") && !isAtEnd()) {
+            AstNode stmt = parseTopLevel(); // Parse statement or expression
+            if (stmt != null) {
+                statements.add(stmt);
+            }
+        }
+        
+        // Consume closing brace
+        if (!matchSymbol("}")) {
+            throw error("expected '}' to close block");
+        }
+        
+        return statements;
+    }
+    
+    private boolean peekValueEquals(String value) {
+        Token p = peek();
+        return p != null && value.equals(p.getValue());
+    }
+    
+    private boolean peekSymbolEquals(String symbol) {
+        Token p = peek();
+        return p != null && p.getType() == Token.Type.SYMBOL && symbol.equals(p.getValue());
+    }
+    
+    private boolean matchSymbol(String symbol) {
+        Token p = peek();
+        if (p != null && p.getType() == Token.Type.SYMBOL && symbol.equals(p.getValue())) {
+            advance();
+            return true;
+        }
+        return false;
     }
 
     public static class ParseException extends RuntimeException {

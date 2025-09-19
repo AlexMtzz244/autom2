@@ -1,21 +1,30 @@
+
 x = 10
 y = 20
 z = 5
+edad = 25
+precio = 99.99
+temperatura = -10.5
 
 nombre = "Juan"
 apellido = "Perez"
 ciudad = "Madrid"
+letra = 'a'
+digito = '7'
 
 activo = True
 inactivo = False
+completado = True
 
-caracter = 'a'
-letra = 'Z'
-digito = '5'
+numeros = [1, 2, 3, 4, 5]
+nombres = ["Ana", "Luis", "Maria"]
+estados = [True, False, True]
+listaVacia = []
 
-decimal = 3.14
-precio = 99.99
-temperatura = -10.5
+punto = (10, 20)
+persona = ("Roberto", 30)
+datos = (42, True)
+tuplaVacia = ()
 
 suma = x + y
 resta = y - x
@@ -30,52 +39,90 @@ diferentes = y /= z
 ambos = activo && inactivo
 alguno = activo || inactivo
 
-lista1 = [1, 2, 3, 4, 5]
-lista2 = ["Ana", "Luis", "María"]
-lista3 = [True, False, True]
-listaVacia = []
+categoria = "adulto"
+descuento = 10
+estado = "listo"
 
-tupla1 = (x, y)
-tupla2 = (nombre, 25)
-tupla3 = ("datos", 100, True)
-tuplaVacia = ()
+area = 25
+volumen = 27
+calculo = 30
+
+resultado1 = funcion x
+resultado2 = proceso nombre
+resultado3 = calcular edad precio
+
+expresion1 = (x + y) * z
+expresion2 = x * (y + z)
+expresion3 = (suma + resta) / 2
+
+potencia = x * x * x
+promedio = (x + y + z) / 3
+maximo = x
 
 operacion1 = suma + producto
 operacion2 = mayor && alguno
-operacion3 = (x + y) * z
+operacion3 = x + y * z
 
-aplicacion1 = funcion x
-aplicacion2 = proceso nombre apellido
-aplicacion3 = calculo suma resta
+compleja1 = suma + resta
+compleja2 = "frio"
+compleja3 = "permitido"
 
-while (x > 0) {
-    x = x - 1
-    proceso()
+anidado1 = 15
+anidado2 = 200
+
+nivel = "adulto"
+acceso = "completo"
+
+app1 = transformar datos
+app2 = combinar nombre apellido
+app3 = evaluar edad activo
+
+procesarNumeros = operacion numeros
+procesarNombres = filtrar nombres
+procesarEstados = verificar estados
+
+final1 = "habilitado"
+final2 = suma
+final3 = combinar usuario ciudad
+
+usuario = "Juan"
+config = True
+temp = -10.5
+nota = 85
+ventas = 1000
+radio = 5
+lado = 3
+a = 10
+b = 20
+
+contador = 0
+limite = 100
+paso = 1
+indice = 0
+
+calculo1 = x + y - z
+calculo2 = precio / 100
+calculo3 = edad + 1
+
+expr1 = x + y * z - cociente
+expr2 = activo && completado
+expr3 = "positivo"
+
+multi1 = funcion x y
+multi2 = proceso nombre apellido ciudad
+multi3 = calcular suma resta producto
+
+ultimaExpr = "alto"
+demostracion = suma
+
+bucle1 = while (contador < limite) {
+    contador = contador + paso
 }
 
-for (i = 1; i <= 10; i++) {
-    calcular(i)
-    mostrar(i)
+bucle2 = loop (activo) {
+    resultado = funcion contador
 }
 
-loop (activo) {
-    verificar()
-    actualizar()
+bucle3 = ciclo (temperatura > 0) {
+    medicion = medir temperatura
 }
-
-ciclo (contador < limite) {
-    incrementar()
-}
-
-while (condicion)
-
-for (j = 0; j < 5)
-
-loop (estado > 0
-
-ciclo
-
-while {
-    operacion()
-}
-

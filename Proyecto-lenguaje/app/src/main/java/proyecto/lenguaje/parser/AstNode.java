@@ -126,3 +126,73 @@ class TupleNode extends AstNode {
 		for (AstNode e : elements) e.buildTree(sb, indent + 1);
 	}
 }
+
+// Cycle nodes for semantic validation
+class WhileNode extends AstNode {
+	public final AstNode condition;
+	public final List<AstNode> body;
+	public WhileNode(AstNode condition, List<AstNode> body) { 
+		this.condition = condition; 
+		this.body = body; 
+	}
+	@Override protected void buildTree(StringBuilder sb, int indent) {
+		indent(sb, indent); sb.append("While\n");
+		condition.buildTree(sb, indent + 1);
+		indent(sb, indent + 1); sb.append("Body\n");
+		for (AstNode stmt : body) stmt.buildTree(sb, indent + 2);
+	}
+}
+
+class ForNode extends AstNode {
+	public final AstNode init;
+	public final AstNode condition;
+	public final AstNode increment;
+	public final List<AstNode> body;
+	public ForNode(AstNode init, AstNode condition, AstNode increment, List<AstNode> body) { 
+		this.init = init; 
+		this.condition = condition; 
+		this.increment = increment; 
+		this.body = body; 
+	}
+	@Override protected void buildTree(StringBuilder sb, int indent) {
+		indent(sb, indent); sb.append("For\n");
+		indent(sb, indent + 1); sb.append("Init\n");
+		if (init != null) init.buildTree(sb, indent + 2);
+		indent(sb, indent + 1); sb.append("Condition\n");
+		if (condition != null) condition.buildTree(sb, indent + 2);
+		indent(sb, indent + 1); sb.append("Increment\n");
+		if (increment != null) increment.buildTree(sb, indent + 2);
+		indent(sb, indent + 1); sb.append("Body\n");
+		for (AstNode stmt : body) stmt.buildTree(sb, indent + 2);
+	}
+}
+
+class LoopNode extends AstNode {
+	public final AstNode condition;
+	public final List<AstNode> body;
+	public LoopNode(AstNode condition, List<AstNode> body) { 
+		this.condition = condition; 
+		this.body = body; 
+	}
+	@Override protected void buildTree(StringBuilder sb, int indent) {
+		indent(sb, indent); sb.append("Loop\n");
+		condition.buildTree(sb, indent + 1);
+		indent(sb, indent + 1); sb.append("Body\n");
+		for (AstNode stmt : body) stmt.buildTree(sb, indent + 2);
+	}
+}
+
+class CicloNode extends AstNode {
+	public final AstNode condition;
+	public final List<AstNode> body;
+	public CicloNode(AstNode condition, List<AstNode> body) { 
+		this.condition = condition; 
+		this.body = body; 
+	}
+	@Override protected void buildTree(StringBuilder sb, int indent) {
+		indent(sb, indent); sb.append("Ciclo\n");
+		condition.buildTree(sb, indent + 1);
+		indent(sb, indent + 1); sb.append("Body\n");
+		for (AstNode stmt : body) stmt.buildTree(sb, indent + 2);
+	}
+}
