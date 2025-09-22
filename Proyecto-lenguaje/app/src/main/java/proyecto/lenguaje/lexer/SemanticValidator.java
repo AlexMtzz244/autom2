@@ -7,65 +7,116 @@ public class SemanticValidator {
         StringBuilder errors = new StringBuilder();
         StringBuilder info = new StringBuilder();
         int cycleCount = 0;
-        
+
         for (int i = 0; i < tokens.size(); i++) {
             Token t = tokens.get(i);
-            
+
             // Detecta palabras clave que podrían representar ciclos
-            if (t.getType() == Token.Type.KEYWORD && 
-                (t.getValue().equals("while") || t.getValue().equals("for") || 
-                 t.getValue().equals("loop") || t.getValue().equals("ciclo"))) {
-                
+            if (t.getType() == Token.Type.KEYWORD && isCycleKeyword(t.getValue())) {
                 cycleCount++;
                 info.append("Ciclo detectado: '").append(t.getValue())
                     .append("' en línea ").append(t.getLine())
                     .append(", posición ").append(t.getPosition()).append("\n");
-                
-                // Validación estructural mejorada
+
                 boolean foundOpenParen = false;
                 boolean foundCloseParen = false;
                 boolean foundOpenBrace = false;
                 boolean foundCloseBrace = false;
                 int parenBalance = 0;
                 int braceBalance = 0;
-                
-                // Examinar los siguientes tokens para validar estructura
-                for (int j = i + 1; j < tokens.size() && j < i + 20; j++) {
+
+                // índice de inicio para el escaneo (después de la keyword)
+                int j = i + 1;
+
+                // Buscar el primer paréntesis de condición o la primera llave de bloque.
+                // No usamos un límite rígido; escaneamos hasta encontrar lo necesario o hasta otra keyword de ciclo.
+                for (; j < tokens.size(); j++) {
                     Token next = tokens.get(j);
-                    
-                    // Buscar paréntesis para condición
-                    if (next.getType() == Token.Type.TUPLE_START || 
-                        (next.getType() == Token.Type.SYMBOL && next.getValue().equals("("))) {
+                    if (next.getType() == Token.Type.KEYWORD && isCycleKeyword(next.getValue()) && j > i + 1) {
+                        // otro ciclo cercano -> detener búsqueda
+                        break;
+                    }
+
+                    if (!foundOpenParen && (next.getType() == Token.Type.TUPLE_START ||
+                            (next.getType() == Token.Type.SYMBOL && "(".equals(next.getValue())))) {
                         foundOpenParen = true;
-                        parenBalance++;
-                    } else if (next.getType() == Token.Type.TUPLE_END || 
-                               (next.getType() == Token.Type.SYMBOL && next.getValue().equals(")"))) {
-                        parenBalance--;
-                        if (parenBalance == 0 && foundOpenParen) {
-                            foundCloseParen = true;
-                        }
+                        parenBalance = 1;
+                        j++; // continuar desde token siguiente al '('
+                        break;
                     }
-                    
-                    // Buscar llaves para bloque
-                    else if (next.getType() == Token.Type.SYMBOL && next.getValue().equals("{")) {
+
+                    if (!foundOpenBrace && next.getType() == Token.Type.SYMBOL && "{".equals(next.getValue())) {
+                        // Encontramos directamente el bloque sin paréntesis de condición
                         foundOpenBrace = true;
-                        braceBalance++;
-                    } else if (next.getType() == Token.Type.SYMBOL && next.getValue().equals("}")) {
-                        braceBalance--;
-                        if (braceBalance == 0 && foundOpenBrace) {
-                            foundCloseBrace = true;
-                        }
-                    }
-                    
-                    // Detener búsqueda si encontramos otro ciclo
-                    if (next.getType() == Token.Type.KEYWORD && 
-                        (next.getValue().equals("while") || next.getValue().equals("for") || 
-                         next.getValue().equals("loop") || next.getValue().equals("ciclo"))) {
+                        braceBalance = 1;
+                        j++; // continuar desde token siguiente a '{'
                         break;
                     }
                 }
-                
-                // Validar errores semánticos
+
+                // Escanear desde j hasta cerrar paréntesis/llaves o hasta otra keyword de ciclo
+                for (int k = j; k < tokens.size(); k++) {
+                    Token next = tokens.get(k);
+                    if (next.getType() == Token.Type.KEYWORD && isCycleKeyword(next.getValue()) && k > i + 1) {
+                        break;
+                    }
+
+                    // Paréntesis
+                    if (next.getType() == Token.Type.TUPLE_START ||
+                        (next.getType() == Token.Type.SYMBOL && "(".equals(next.getValue()))) {
+                        foundOpenParen = true;
+                        parenBalance++;
+                    } else if (next.getType() == Token.Type.TUPLE_END ||
+                               (next.getType() == Token.Type.SYMBOL && ")".equals(next.getValue()))) {
+                        if (parenBalance > 0) parenBalance--;
+                        if (foundOpenParen && parenBalance == 0) foundCloseParen = true;
+                    }
+
+                    // Llaves
+                    if (next.getType() == Token.Type.SYMBOL && "{".equals(next.getValue())) {
+                        foundOpenBrace = true;
+                        braceBalance++;
+                    } else if (next.getType() == Token.Type.SYMBOL && "}".equals(next.getValue())) {
+                        if (braceBalance > 0) braceBalance--;
+                        if (foundOpenBrace && braceBalance == 0) foundCloseBrace = true;
+                    }
+
+                    // Si ya cerramos el bloque y (si había paréntesis) también los paréntesis, podemos parar
+                    if (foundOpenBrace && foundCloseBrace && (!foundOpenParen || foundCloseParen)) {
+                        break;
+                    }
+                }
+
+                // Comprobaciones específicas para 'for': dentro de los paréntesis debería haber 2 ';'
+                if ("for".equals(t.getValue()) && foundOpenParen) {
+                    // contar ';' entre el primer '(' y su cierre
+                    int semicolons = 0;
+                    int depth = 0;
+                    boolean inside = false;
+                    for (int k = i + 1; k < tokens.size(); k++) {
+                        Token next = tokens.get(k);
+                        if (!inside && (next.getType() == Token.Type.TUPLE_START || (next.getType() == Token.Type.SYMBOL && "(".equals(next.getValue())))) {
+                            inside = true;
+                            depth = 1;
+                            continue;
+                        }
+                        if (inside) {
+                            if (next.getType() == Token.Type.TUPLE_START || (next.getType() == Token.Type.SYMBOL && "(".equals(next.getValue()))) depth++;
+                            else if (next.getType() == Token.Type.TUPLE_END || (next.getType() == Token.Type.SYMBOL && ")".equals(next.getValue()))) {
+                                depth--;
+                                if (depth == 0) break; // fin de paréntesis
+                            }
+                            if (next.getType() == Token.Type.SYMBOL && ";".equals(next.getValue())) semicolons++;
+                        }
+                    }
+                    if (semicolons < 2) {
+                        errors.append("ERROR: for en línea ").append(t.getLine())
+                              .append(" parece no contener las 2 separaciones ';' dentro de sus paréntesis. Encontradas: ")
+                              .append(semicolons).append(".\n");
+                    }
+                }
+
+                // Mensajes de error finales según lo descubierto
                 if (!foundOpenParen) {
                     errors.append("ERROR: Ciclo '").append(t.getValue())
                           .append("' en línea ").append(t.getLine())
@@ -75,7 +126,7 @@ public class SemanticValidator {
                           .append("' en línea ").append(t.getLine())
                           .append(" no tiene paréntesis de cierre para la condición.\n");
                 }
-                
+
                 if (!foundOpenBrace) {
                     errors.append("ERROR: Ciclo '").append(t.getValue())
                           .append("' en línea ").append(t.getLine())
@@ -87,18 +138,18 @@ public class SemanticValidator {
                 }
             }
         }
-        
+
         StringBuilder result = new StringBuilder();
         result.append("=== VALIDACIÓN SEMÁNTICA DE CICLOS ===\n");
         result.append("Total de ciclos detectados: ").append(cycleCount).append("\n\n");
-        
+
         if (cycleCount == 0) {
             result.append("No se detectaron ciclos en el código.\n");
             result.append("Nota: El código utiliza solo estructuras funcionales válidas.\n");
         } else {
             result.append("--- INFORMACIÓN DE CICLOS ---\n");
             result.append(info.toString()).append("\n");
-            
+
             if (errors.length() > 0) {
                 result.append("--- ERRORES SEMÁNTICOS ENCONTRADOS ---\n");
                 result.append(errors.toString());
@@ -107,7 +158,11 @@ public class SemanticValidator {
                 result.append("Estructura de condiciones y bloques correcta.\n");
             }
         }
-        
+
         return result.toString();
+    }
+
+    private static boolean isCycleKeyword(String kw) {
+        return "while".equals(kw) || "for".equals(kw) || "loop".equals(kw) || "ciclo".equals(kw);
     }
 }

@@ -119,18 +119,15 @@ public class Parser {
             return new LetNode(name, bound, body);
         }
         
-        // Handle cycle structures
+        // Handle cycle structures (while/for/loop)
         if (matchKeyword("while")) {
-            return parseWhileLoop();
+            return parseCycle(CycleNode.CycleType.WHILE);
         }
         if (matchKeyword("for")) {
-            return parseForLoop();
+            return parseCycle(CycleNode.CycleType.FOR);
         }
-        if (matchKeyword("loop")) {
-            return parseLoop();
-        }
-        if (matchKeyword("ciclo")) {
-            return parseCiclo();
+        if (matchKeyword("loop") || matchKeyword("ciclo")) {
+            return parseCycle(CycleNode.CycleType.LOOP);
         }
         // binary operators with left-assoc simple precedence
         AstNode left = parseApplication();
@@ -164,10 +161,10 @@ public class Parser {
         if (t == null) return false;
         Token.Type ty = t.getType();
         
-        // Check for cycle keywords
+        // cycle keywords count as primaries as they start a cycle expression
         if (ty == Token.Type.KEYWORD) {
             String keyword = t.getValue();
-            return keyword.equals("while") || keyword.equals("for") || 
+            return keyword.equals("while") || keyword.equals("for") ||
                    keyword.equals("loop") || keyword.equals("ciclo");
         }
         
@@ -185,21 +182,14 @@ public class Parser {
         // Check for cycle keywords first
         if (t.getType() == Token.Type.KEYWORD) {
             String keyword = t.getValue();
-            if (keyword.equals("while")) {
-                advance(); // consume 'while'
-                return parseWhileLoop();
-            }
-            if (keyword.equals("for")) {
-                advance(); // consume 'for'
-                return parseForLoop();
-            }
-            if (keyword.equals("loop")) {
-                advance(); // consume 'loop'
-                return parseLoop();
-            }
-            if (keyword.equals("ciclo")) {
-                advance(); // consume 'ciclo'
-                return parseCiclo();
+            if (keyword.equals("while") || keyword.equals("for") || keyword.equals("loop") || keyword.equals("ciclo")) {
+                // consume the keyword and delegate to parseCycle
+                Token kw = advance();
+                CycleNode.CycleType type;
+                if ("while".equals(kw.getValue())) type = CycleNode.CycleType.WHILE;
+                else if ("for".equals(kw.getValue())) type = CycleNode.CycleType.FOR;
+                else type = CycleNode.CycleType.LOOP;
+                return parseCycle(type, kw);
             }
         }
         
@@ -291,61 +281,55 @@ public class Parser {
         return new ParseException(msg + " at " + where);
     }
 
-    // Cycle parsing methods
-    private AstNode parseWhileLoop() {
-        consumeType(Token.Type.TUPLE_START); // (
-        AstNode condition = parseExpression();
-        consumeType(Token.Type.TUPLE_END); // )
-        List<AstNode> body = parseBlock();
-        return new WhileNode(condition, body);
-    }
-    
-    private AstNode parseForLoop() {
-        consumeType(Token.Type.TUPLE_START); // (
-        
-        // Parse init (optional)
+    // Unified cycle parser producing CycleNode
+    private AstNode parseCycle(CycleNode.CycleType type, Token kw) {
+        // expect '('
+        if (!matchType(Token.Type.TUPLE_START) && !matchSymbol("(")) {
+            throw error("expected '(' after '" + kw.getValue() + "'");
+        }
+
         AstNode init = null;
-        if (!peekValueEquals(";")) {
-            init = parseExpression();
-        }
-        if (matchValue(";")) {
-            // continue
-        }
-        
-        // Parse condition (optional)
         AstNode condition = null;
-        if (!peekValueEquals(";")) {
+        AstNode update = null;
+
+    if (type == CycleNode.CycleType.FOR) {
+            // for ( init ; cond ; update )
+            // init (optional)
+            if (!peekValueEquals(";") && !peekTypeIs(Token.Type.TUPLE_END)) {
+                init = parseExpression();
+            }
+            // expect ';'
+            consumeValue(";");
+
+            // cond (optional)
+            if (!peekValueEquals(";") && !peekTypeIs(Token.Type.TUPLE_END)) {
+                condition = parseExpression();
+            }
+            consumeValue(";");
+
+            // update (optional)
+            if (!peekTypeIs(Token.Type.TUPLE_END)) {
+                update = parseExpression();
+            }
+        } else {
+            // while/loop: single condition expression
             condition = parseExpression();
         }
-        if (matchValue(";")) {
-            // continue
+
+        // expect ')'
+        if (!matchType(Token.Type.TUPLE_END) && !matchSymbol(")")) {
+            throw error("expected ')' to close cycle header");
         }
-        
-        // Parse increment (optional)
-        AstNode increment = null;
-        if (!peekTypeIs(Token.Type.TUPLE_END)) {
-            increment = parseExpression();
-        }
-        
-        consumeType(Token.Type.TUPLE_END); // )
+
         List<AstNode> body = parseBlock();
-        return new ForNode(init, condition, increment, body);
+        return new CycleNode(type, init, condition, update, body);
     }
-    
-    private AstNode parseLoop() {
-        consumeType(Token.Type.TUPLE_START); // (
-        AstNode condition = parseExpression();
-        consumeType(Token.Type.TUPLE_END); // )
-        List<AstNode> body = parseBlock();
-        return new LoopNode(condition, body);
-    }
-    
-    private AstNode parseCiclo() {
-        consumeType(Token.Type.TUPLE_START); // (
-        AstNode condition = parseExpression();
-        consumeType(Token.Type.TUPLE_END); // )
-        List<AstNode> body = parseBlock();
-        return new CicloNode(condition, body);
+
+    // Overload used when the keyword was already consumed (last token)
+    private AstNode parseCycle(CycleNode.CycleType type) {
+        Token kw = null;
+        if (pos > 0 && pos - 1 < tokens.size()) kw = tokens.get(pos - 1);
+        return parseCycle(type, kw);
     }
     
     private List<AstNode> parseBlock() {
