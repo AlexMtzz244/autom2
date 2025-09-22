@@ -126,3 +126,36 @@ bucle2 = loop (activo) {
 bucle3 = ciclo (temperatura > 0) {
     medicion = medir temperatura
 }
+
+
+
+
+/* Errores de bucles
+bucle1 = while ("contador" < limite) {
+    contador = contador + paso
+}
+
+bucle2 = loop (activo) {
+    resultado = activo + contador
+}
+
+bucle3 = ciclo (temperatura > 0) {
+    medicion = medir nuevaTemp
+}
+
+bucle1 = while (contador < limite) {
+    contador = "incremento"
+}
+
+bucle2 = loop (5) {
+    resultado = funcion contador
+}
+
+bucle3 = ciclo (temperatura > 0) {
+    medicion = calcularPromedio temperatura
+}
+
+
+
+
+*/
