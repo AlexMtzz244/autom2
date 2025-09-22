@@ -128,9 +128,21 @@ bucle3 = ciclo (temperatura > 0) {
 }
 
 
+i = 0
+sum = 0
+n = 10
+
+for (i = 1; i <= n; i = i + 1) {
+    sum = sum + i
+}
+
+average = sum / n
+result = sum
 
 
-/* Errores de bucles
+
+--Errores bucles
+
 bucle1 = while ("contador" < limite) {
     contador = contador + paso
 }
@@ -158,4 +170,3 @@ bucle3 = ciclo (temperatura > 0) {
 
 
 
-*/
