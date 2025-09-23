@@ -3,15 +3,11 @@ package proyecto.lenguaje.lexer;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.ArrayList;
 
 public class SemanticValidator {
     private static final Map<String, String> variableTypes = new HashMap<>();
-    private static final Set<String> numericOperators = new HashSet<>(Arrays.asList("+", "-", "*", "/", "<", ">", "<=", ">="));
-    private static final Set<String> booleanOperators = new HashSet<>(Arrays.asList("&&", "||", "==", "/="));
+    
     public static String validateCycles(List<Token> tokens) {
         StringBuilder errors = new StringBuilder();
         StringBuilder info = new StringBuilder();
@@ -30,133 +26,8 @@ public class SemanticValidator {
                     .append("' en línea ").append(t.getLine())
                     .append(", posición ").append(t.getPosition()).append("\n");
 
-                boolean foundOpenParen = false;
-                boolean foundCloseParen = false;
-                boolean foundOpenBrace = false;
-                boolean foundCloseBrace = false;
-                int parenBalance = 0;
-                int braceBalance = 0;
-
-                // índice de inicio para el escaneo (después de la keyword)
-                int j = i + 1;
-
-                // Buscar el primer paréntesis de condición o la primera llave de bloque
-                List<Token> conditionTokens = new ArrayList<>();
-                boolean inCondition = false;
-                
-                for (; j < tokens.size(); j++) {
-                    Token next = tokens.get(j);
-                    if (next.getType() == Token.Type.KEYWORD && isCycleKeyword(next.getValue()) && j > i + 1) {
-                        break;
-                    }
-
-                    if (!foundOpenParen && (next.getType() == Token.Type.TUPLE_START ||
-                            (next.getType() == Token.Type.SYMBOL && "(".equals(next.getValue())))) {
-                        foundOpenParen = true;
-                        parenBalance = 1;
-                        inCondition = true;
-                        j++; // continuar desde token siguiente al '('
-                        continue;
-                    }
-
-                    if (inCondition) {
-                        if (next.getType() == Token.Type.TUPLE_END ||
-                            (next.getType() == Token.Type.SYMBOL && ")".equals(next.getValue()))) {
-                            inCondition = false;
-                            foundCloseParen = true;
-                            validateCondition(conditionTokens, errors, t.getLine());
-                        } else {
-                            conditionTokens.add(next);
-                        }
-                    }
-
-                    if (!foundOpenBrace && next.getType() == Token.Type.SYMBOL && "{".equals(next.getValue())) {
-                        foundOpenBrace = true;
-                        braceBalance = 1;
-                        break;
-                    }
-                }
-
-                // Validar el cuerpo del ciclo
-                List<Token> bodyTokens = new ArrayList<>();
-                boolean inBody = false;
-
-                // Escanear desde j hasta cerrar las llaves o hasta otra keyword de ciclo
-                for (int k = j + 1; k < tokens.size(); k++) {
-                    Token next = tokens.get(k);
-                    if (next.getType() == Token.Type.KEYWORD && isCycleKeyword(next.getValue()) && k > i + 1) {
-                        break;
-                    }
-
-                    if (next.getType() == Token.Type.SYMBOL && "{".equals(next.getValue())) {
-                        braceBalance++;
-                        if (!inBody) {
-                            inBody = true;
-                            continue;
-                        }
-                    } else if (next.getType() == Token.Type.SYMBOL && "}".equals(next.getValue())) {
-                        braceBalance--;
-                        if (braceBalance == 0) {
-                            foundCloseBrace = true;
-                            validateBody(bodyTokens, errors);
-                            break;
-                        }
-                    }
-
-                    if (inBody && braceBalance > 0) {
-                        bodyTokens.add(next);
-                    }
-                }
-
-                // Comprobaciones específicas para 'for': dentro de los paréntesis debería haber 2 ';'
-                if ("for".equals(t.getValue()) && foundOpenParen) {
-                    // contar ';' entre el primer '(' y su cierre
-                    int semicolons = 0;
-                    int depth = 0;
-                    boolean inside = false;
-                    for (int k = i + 1; k < tokens.size(); k++) {
-                        Token next = tokens.get(k);
-                        if (!inside && (next.getType() == Token.Type.TUPLE_START || (next.getType() == Token.Type.SYMBOL && "(".equals(next.getValue())))) {
-                            inside = true;
-                            depth = 1;
-                            continue;
-                        }
-                        if (inside) {
-                            if (next.getType() == Token.Type.TUPLE_START || (next.getType() == Token.Type.SYMBOL && "(".equals(next.getValue()))) depth++;
-                            else if (next.getType() == Token.Type.TUPLE_END || (next.getType() == Token.Type.SYMBOL && ")".equals(next.getValue()))) {
-                                depth--;
-                                if (depth == 0) break; // fin de paréntesis
-                            }
-                            if (next.getType() == Token.Type.SYMBOL && ";".equals(next.getValue())) semicolons++;
-                        }
-                    }
-                    if (semicolons < 2) {
-                        errors.append("ERROR: for en línea ").append(t.getLine())
-                              .append(" parece no contener las 2 separaciones ';' dentro de sus paréntesis. Encontradas: ")
-                              .append(semicolons).append(".\n");
-                    }
-                }
-
-                // Mensajes de error finales según lo descubierto
-                if (!foundOpenParen) {
-                    errors.append("ERROR: Ciclo '").append(t.getValue())
-                          .append("' en línea ").append(t.getLine())
-                          .append(" no tiene paréntesis de apertura para la condición.\n");
-                } else if (!foundCloseParen) {
-                    errors.append("ERROR: Ciclo '").append(t.getValue())
-                          .append("' en línea ").append(t.getLine())
-                          .append(" no tiene paréntesis de cierre para la condición.\n");
-                }
-
-                if (!foundOpenBrace) {
-                    errors.append("ERROR: Ciclo '").append(t.getValue())
-                          .append("' en línea ").append(t.getLine())
-                          .append(" no tiene llave de apertura para el bloque de código.\n");
-                } else if (!foundCloseBrace) {
-                    errors.append("ERROR: Ciclo '").append(t.getValue())
-                          .append("' en línea ").append(t.getLine())
-                          .append(" no tiene llave de cierre para el bloque de código.\n");
-                }
+                // Validar estructura completa del ciclo
+                validateCycleStructure(tokens, i, t, errors, info);
             }
         }
 
@@ -177,10 +48,420 @@ public class SemanticValidator {
             } else {
                 result.append("✅ Todos los ciclos están bien formados semánticamente.\n");
                 result.append("Estructura de condiciones y bloques correcta.\n");
+                result.append("Variables y tipos validados correctamente.\n");
             }
         }
 
         return result.toString();
+    }
+
+    private static void validateCycleStructure(List<Token> tokens, int cycleIndex, Token cycleToken, 
+                                             StringBuilder errors, StringBuilder info) {
+        String cycleType = cycleToken.getValue();
+        int line = cycleToken.getLine();
+
+        // Buscar paréntesis de apertura
+        int parenStart = findNextToken(tokens, cycleIndex + 1, Token.Type.TUPLE_START, "(");
+        if (parenStart == -1) {
+            errors.append("ERROR: Ciclo '").append(cycleType)
+                  .append("' en línea ").append(line)
+                  .append(" no tiene paréntesis de apertura '(' para la condición.\n");
+            return;
+        }
+
+        // Buscar paréntesis de cierre
+        int parenEnd = findMatchingCloseParen(tokens, parenStart);
+        if (parenEnd == -1) {
+            errors.append("ERROR: Ciclo '").append(cycleType)
+                  .append("' en línea ").append(line)
+                  .append(" no tiene paréntesis de cierre ')' para la condición.\n");
+            return;
+        }
+
+        // Buscar llaves del bloque
+        int braceStart = findNextToken(tokens, parenEnd + 1, Token.Type.SYMBOL, "{");
+        if (braceStart == -1) {
+            errors.append("ERROR: Ciclo '").append(cycleType)
+                  .append("' en línea ").append(line)
+                  .append(" no tiene llave de apertura '{' para el bloque de código.\n");
+            return;
+        }
+
+        int braceEnd = findMatchingCloseBrace(tokens, braceStart);
+        if (braceEnd == -1) {
+            errors.append("ERROR: Ciclo '").append(cycleType)
+                  .append("' en línea ").append(line)
+                  .append(" no tiene llave de cierre '}' para el bloque de código.\n");
+            return;
+        }
+
+        // Extraer tokens de la condición/inicialización
+        List<Token> headerTokens = extractTokens(tokens, parenStart + 1, parenEnd);
+        List<Token> bodyTokens = extractTokens(tokens, braceStart + 1, braceEnd);
+
+        // Validar según el tipo de ciclo
+        if ("for".equals(cycleType)) {
+            validateForCycle(headerTokens, bodyTokens, line, errors, info);
+        } else if ("while".equals(cycleType) || "loop".equals(cycleType) || "ciclo".equals(cycleType)) {
+            validateWhileCycle(headerTokens, bodyTokens, line, errors, info);
+        }
+    }
+
+    private static void validateForCycle(List<Token> headerTokens, List<Token> bodyTokens, 
+                                       int line, StringBuilder errors, StringBuilder info) {
+        info.append("  Validando estructura FOR en línea ").append(line).append("\n");
+
+        // Dividir la cabecera del for por punto y coma
+        List<List<Token>> forParts = splitByDelimiter(headerTokens, ";");
+        
+        if (forParts.size() != 3) {
+            errors.append("ERROR: FOR en línea ").append(line)
+                  .append(" debe tener exactamente 3 partes separadas por ';' (inicialización; condición; incremento). ")
+                  .append("Encontradas: ").append(forParts.size()).append(" partes.\n");
+            return;
+        }
+
+        List<Token> initTokens = forParts.get(0);
+        List<Token> condTokens = forParts.get(1);
+        List<Token> incrTokens = forParts.get(2);
+
+        // Validar inicialización
+        if (initTokens.isEmpty()) {
+            errors.append("ERROR: FOR en línea ").append(line)
+                  .append(" no tiene inicialización. Ejemplo: 'i = 0'\n");
+        } else {
+            validateAssignment(initTokens, line, errors, "inicialización del FOR");
+        }
+
+        // Validar condición
+        if (condTokens.isEmpty()) {
+            errors.append("ERROR: FOR en línea ").append(line)
+                  .append(" no tiene condición. Ejemplo: 'i < 10'\n");
+        } else {
+            validateConditionExpression(condTokens, line, errors, "condición del FOR");
+        }
+
+        // Validar incremento
+        if (incrTokens.isEmpty()) {
+            errors.append("ERROR: FOR en línea ").append(line)
+                  .append(" no tiene incremento. Ejemplo: 'i = i + 1'\n");
+        } else {
+            validateAssignment(incrTokens, line, errors, "incremento del FOR");
+        }
+
+        // Validar cuerpo del ciclo
+        validateCycleBody(bodyTokens, line, errors, info);
+    }
+
+    private static void validateWhileCycle(List<Token> headerTokens, List<Token> bodyTokens, 
+                                         int line, StringBuilder errors, StringBuilder info) {
+        info.append("  Validando estructura WHILE/LOOP en línea ").append(line).append("\n");
+
+        if (headerTokens.isEmpty()) {
+            errors.append("ERROR: WHILE/LOOP en línea ").append(line)
+                  .append(" no tiene condición. Ejemplo: 'x > 0'\n");
+            return;
+        }
+
+        // Validar condición
+        validateConditionExpression(headerTokens, line, errors, "condición del WHILE/LOOP");
+
+        // Validar cuerpo del ciclo
+        validateCycleBody(bodyTokens, line, errors, info);
+    }
+
+    private static void validateAssignment(List<Token> tokens, int line, StringBuilder errors, String context) {
+        if (tokens.size() < 3) {
+            errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                  .append(" incompleta. Se esperaba: variable = valor\n");
+            return;
+        }
+
+        Token variable = tokens.get(0);
+        Token equals = tokens.get(1);
+        
+        // Validar que sea un identificador
+        if (variable.getType() != Token.Type.IDENTIFIER_VAR && variable.getType() != Token.Type.IDENTIFIER_TYPE) {
+            errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                  .append(" debe comenzar con una variable válida, no '").append(variable.getValue()).append("'\n");
+            return;
+        }
+
+        // Validar operador de asignación
+        if (!"=".equals(equals.getValue())) {
+            errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                  .append(" debe usar '=' para asignación, no '").append(equals.getValue()).append("'\n");
+            return;
+        }
+
+        // Validar la expresión del lado derecho
+        List<Token> rightSide = tokens.subList(2, tokens.size());
+        validateExpression(rightSide, line, errors, context + " - lado derecho");
+
+        // Verificar compatibilidad de tipos con validación estricta
+        String varName = variable.getValue();
+        String previousType = variableTypes.get(varName);
+        
+        if (rightSide.size() >= 1) {
+            String assignedType = inferExpressionType(rightSide);
+            
+            // Validación adicional: verificar cada token individual para detectar mezclas de tipos
+            for (Token token : rightSide) {
+                String tokenType = inferType(token);
+                if (!tokenType.equals("unknown") && !tokenType.equals(assignedType)) {
+                    // Detectar mezcla de tipos en la expresión
+                    if ((assignedType.equals("numeric") && tokenType.equals("string")) ||
+                        (assignedType.equals("string") && tokenType.equals("numeric"))) {
+                        errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                              .append(" - MEZCLA DE TIPOS INCOMPATIBLES. Expresión contiene tanto valores numéricos como texto. ")
+                              .append("Token '").append(token.getValue()).append("' es de tipo ").append(tokenType)
+                              .append(" pero la expresión se evaluó como ").append(assignedType).append("\n");
+                    }
+                }
+            }
+            
+            if (previousType != null) {
+                // La variable ya fue declarada anteriormente
+                if (!isCompatibleType(previousType, assignedType)) {
+                    errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                          .append(" - INCOMPATIBILIDAD DE TIPOS. Variable '").append(varName)
+                          .append("' fue declarada como tipo '").append(previousType)
+                          .append("' pero se intenta asignar un valor de tipo '").append(assignedType).append("'.\n")
+                          .append("  Ejemplo de valor esperado para tipo '").append(previousType).append("': ")
+                          .append(getExampleValue(previousType)).append("\n")
+                          .append("  Valor actual detectado como tipo '").append(assignedType).append("': ");
+                    
+                    // Mostrar los tokens problemáticos
+                    for (int i = 0; i < rightSide.size(); i++) {
+                        errors.append(rightSide.get(i).getValue());
+                        if (i < rightSide.size() - 1) errors.append(" ");
+                    }
+                    errors.append("\n");
+                } else {
+                    // Tipo compatible, pero reportar información útil si hay conversión
+                    if (!previousType.equals(assignedType) && !assignedType.equals("unknown")) {
+                        errors.append("INFO: ").append(context).append(" en línea ").append(line)
+                              .append(" - Variable '").append(varName).append("' cambió de tipo '")
+                              .append(previousType).append("' a '").append(assignedType)
+                              .append("' (conversión automática permitida).\n");
+                    }
+                }
+            } else {
+                // Primera asignación de la variable
+                variableTypes.put(varName, assignedType);
+            }
+            
+            // Validación adicional para asignaciones numéricas
+            if ("numeric".equals(assignedType) && rightSide.size() > 2) {
+                validateNumericExpression(rightSide, line, errors, context);
+            }
+        }
+    }
+
+    private static void validateConditionExpression(List<Token> tokens, int line, StringBuilder errors, String context) {
+        if (tokens.isEmpty()) {
+            errors.append("ERROR: ").append(context).append(" en línea ").append(line).append(" está vacía\n");
+            return;
+        }
+
+        // Validar que todas las variables estén definidas
+        for (Token token : tokens) {
+            if ((token.getType() == Token.Type.IDENTIFIER_VAR || token.getType() == Token.Type.IDENTIFIER_TYPE) 
+                && !variableTypes.containsKey(token.getValue())) {
+                errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                      .append(" usa variable no definida: '").append(token.getValue()).append("'\n");
+            }
+        }
+
+        // Validar operadores de comparación y compatibilidad de tipos
+        boolean hasComparisonOp = false;
+        for (int i = 0; i < tokens.size(); i++) {
+            Token token = tokens.get(i);
+            if (token.getType() == Token.Type.SYMBOL || token.getType() == Token.Type.OPERATOR) {
+                String op = token.getValue();
+                if (op.equals("<") || op.equals(">") || op.equals("<=") || op.equals(">=") || 
+                    op.equals("==") || op.equals("/=")) {
+                    hasComparisonOp = true;
+                    
+                    // Validar tipos de los operandos
+                    if (i > 0 && i < tokens.size() - 1) {
+                        Token leftToken = tokens.get(i - 1);
+                        Token rightToken = tokens.get(i + 1);
+                        
+                        String leftType = inferType(leftToken);
+                        String rightType = inferType(rightToken);
+                        
+                        // Validar que los tipos sean compatibles para comparación
+                        if (!leftType.equals("unknown") && !rightType.equals("unknown")) {
+                            if (!areComparableTypes(leftType, rightType)) {
+                                errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                                      .append(" - INCOMPATIBILIDAD DE TIPOS en comparación. ")
+                                      .append("No se puede comparar '").append(leftToken.getValue())
+                                      .append("' (tipo: ").append(leftType).append(") ")
+                                      .append("con '").append(rightToken.getValue())
+                                      .append("' (tipo: ").append(rightType).append(") ")
+                                      .append("usando el operador '").append(op).append("'.\n")
+                                      .append("  Los tipos deben ser compatibles para realizar comparaciones.\n");
+                            }
+                            
+                            // Validación especial para operadores de orden (<, >, <=, >=)
+                            if ((op.equals("<") || op.equals(">") || op.equals("<=") || op.equals(">=")) &&
+                                (!leftType.equals("numeric") || !rightType.equals("numeric"))) {
+                                errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                                      .append(" - Los operadores de orden (").append(op)
+                                      .append(") solo pueden usarse con valores numéricos. ")
+                                      .append("Encontrado: '").append(leftToken.getValue()).append("' (")
+                                      .append(leftType).append(") y '").append(rightToken.getValue())
+                                      .append("' (").append(rightType).append(")\n");
+                            }
+                        }
+                    }
+                } else if (op.equals("&&") || op.equals("||")) {
+                    // Validar operadores lógicos
+                    if (i > 0 && i < tokens.size() - 1) {
+                        Token leftToken = tokens.get(i - 1);
+                        Token rightToken = tokens.get(i + 1);
+                        
+                        String leftType = inferType(leftToken);
+                        String rightType = inferType(rightToken);
+                        
+                        if (!leftType.equals("boolean") && !leftType.equals("unknown")) {
+                            errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                                  .append(" - El operador '").append(op).append("' requiere operandos booleanos. ")
+                                  .append("Operando izquierdo '").append(leftToken.getValue())
+                                  .append("' es de tipo ").append(leftType).append("\n");
+                        }
+                        if (!rightType.equals("boolean") && !rightType.equals("unknown")) {
+                            errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                                  .append(" - El operador '").append(op).append("' requiere operandos booleanos. ")
+                                  .append("Operando derecho '").append(rightToken.getValue())
+                                  .append("' es de tipo ").append(rightType).append("\n");
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!hasComparisonOp) {
+            errors.append("WARNING: ").append(context).append(" en línea ").append(line)
+                  .append(" no parece tener operadores de comparación. ")
+                  .append("¿Está seguro de que es una condición válida?\n");
+        }
+    }
+
+    private static void validateCycleBody(List<Token> bodyTokens, int line, StringBuilder errors, StringBuilder info) {
+        if (bodyTokens.isEmpty()) {
+            errors.append("WARNING: Cuerpo del ciclo en línea ").append(line).append(" está vacío\n");
+            return;
+        }
+
+        info.append("  Validando cuerpo del ciclo con ").append(bodyTokens.size()).append(" tokens\n");
+
+        // Buscar y validar asignaciones en el cuerpo
+        for (int i = 0; i < bodyTokens.size() - 2; i++) {
+            if ((bodyTokens.get(i).getType() == Token.Type.IDENTIFIER_VAR || 
+                 bodyTokens.get(i).getType() == Token.Type.IDENTIFIER_TYPE) &&
+                "=".equals(bodyTokens.get(i + 1).getValue())) {
+                
+                List<Token> assignment = new ArrayList<>();
+                int j = i;
+                // Recoger toda la asignación hasta el final de la línea o punto y coma
+                while (j < bodyTokens.size() && !";".equals(bodyTokens.get(j).getValue()) && 
+                       !(j > i && (bodyTokens.get(j).getType() == Token.Type.IDENTIFIER_VAR || 
+                                   bodyTokens.get(j).getType() == Token.Type.IDENTIFIER_TYPE) &&
+                         j + 1 < bodyTokens.size() && "=".equals(bodyTokens.get(j + 1).getValue()))) {
+                    assignment.add(bodyTokens.get(j));
+                    j++;
+                }
+                
+                validateAssignment(assignment, line, errors, "asignación en cuerpo del ciclo");
+                i = j - 1; // Saltar los tokens ya procesados
+            }
+        }
+    }
+
+    private static String inferExpressionType(List<Token> tokens) {
+        if (tokens.isEmpty()) return "unknown";
+        
+        // Para expresiones simples, usar el tipo del primer token significativo
+        for (Token token : tokens) {
+            if (token.getType() != Token.Type.SYMBOL && token.getType() != Token.Type.OPERATOR) {
+                return inferType(token);
+            }
+        }
+        return "unknown";
+    }
+
+    private static void validateExpression(List<Token> tokens, int line, StringBuilder errors, String context) {
+        for (Token token : tokens) {
+            if ((token.getType() == Token.Type.IDENTIFIER_VAR || token.getType() == Token.Type.IDENTIFIER_TYPE) 
+                && !variableTypes.containsKey(token.getValue())) {
+                errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                      .append(" usa variable no definida: '").append(token.getValue()).append("'\n");
+            }
+        }
+    }
+
+    // Métodos auxiliares para navegación de tokens
+    private static int findNextToken(List<Token> tokens, int start, Token.Type type, String value) {
+        for (int i = start; i < tokens.size(); i++) {
+            if (tokens.get(i).getType() == type && (value == null || value.equals(tokens.get(i).getValue()))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int findMatchingCloseParen(List<Token> tokens, int openIndex) {
+        int balance = 1;
+        for (int i = openIndex + 1; i < tokens.size(); i++) {
+            Token token = tokens.get(i);
+            if (token.getType() == Token.Type.TUPLE_START || "(".equals(token.getValue())) {
+                balance++;
+            } else if (token.getType() == Token.Type.TUPLE_END || ")".equals(token.getValue())) {
+                balance--;
+                if (balance == 0) return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int findMatchingCloseBrace(List<Token> tokens, int openIndex) {
+        int balance = 1;
+        for (int i = openIndex + 1; i < tokens.size(); i++) {
+            Token token = tokens.get(i);
+            if ("{".equals(token.getValue())) {
+                balance++;
+            } else if ("}".equals(token.getValue())) {
+                balance--;
+                if (balance == 0) return i;
+            }
+        }
+        return -1;
+    }
+
+    private static List<Token> extractTokens(List<Token> tokens, int start, int end) {
+        if (start >= end || start < 0 || end > tokens.size()) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(tokens.subList(start, end));
+    }
+
+    private static List<List<Token>> splitByDelimiter(List<Token> tokens, String delimiter) {
+        List<List<Token>> parts = new ArrayList<>();
+        List<Token> current = new ArrayList<>();
+        
+        for (Token token : tokens) {
+            if (delimiter.equals(token.getValue())) {
+                parts.add(new ArrayList<>(current));
+                current.clear();
+            } else {
+                current.add(token);
+            }
+        }
+        parts.add(current); // Agregar la última parte
+        
+        return parts;
     }
 
     private static boolean isCycleKeyword(String kw) {
@@ -195,7 +476,12 @@ public class SemanticValidator {
                 
                 Token valueToken = tokens.get(i + 2);
                 String type = inferType(valueToken);
-                variableTypes.put(tokens.get(i).getValue(), type);
+                String varName = tokens.get(i).getValue();
+                
+                // Registrar la primera declaración de cada variable
+                if (!variableTypes.containsKey(varName)) {
+                    variableTypes.put(varName, type);
+                }
             }
         }
     }
@@ -218,157 +504,165 @@ public class SemanticValidator {
                 String type = variableTypes.get(token.getValue());
                 if (type == null) {
                     // Si la variable no está definida, intentamos inferir su tipo por el valor
-                    if (token.getValue().matches("\\d+(\\.\\d+)?")) {
+                    String value = token.getValue();
+                    if (value.matches("\\d+(\\.\\d+)?")) {
                         return "numeric";
-                    } else if (token.getValue().matches("\".*\"")) {
+                    } else if (value.startsWith("\"") && value.endsWith("\"")) {
                         return "string";
-                    } else if (token.getValue().equals("True") || token.getValue().equals("False")) {
+                    } else if (value.equals("True") || value.equals("False")) {
                         return "boolean";
+                    } else if (value.startsWith("'") && value.endsWith("'") && value.length() == 3) {
+                        return "char";
                     }
                 }
                 return type != null ? type : "unknown";
-            default:
+            case SYMBOL:
+                // Reconocer valores literales que pueden venir como símbolos
+                String value = token.getValue();
+                if (value.matches("\\d+")) {
+                    return "numeric";
+                } else if (value.startsWith("\"") && value.endsWith("\"")) {
+                    return "string";
+                }
                 return "unknown";
-        }
-    }
-
-    private static void validateCondition(List<Token> conditionTokens, StringBuilder errors, int line) {
-        if (conditionTokens.isEmpty()) {
-            errors.append("ERROR en línea ").append(line)
-                  .append(": Condición del ciclo vacía\n");
-            return;
-        }
-
-        // Validar que las variables existan y sean del tipo correcto
-        for (int i = 0; i < conditionTokens.size(); i++) {
-            Token token = conditionTokens.get(i);
-            
-            if (token.getType() == Token.Type.IDENTIFIER_VAR || token.getType() == Token.Type.IDENTIFIER_TYPE) {
-                String varType = variableTypes.get(token.getValue());
-                if (varType == null) {
-                    errors.append("ERROR en línea ").append(line)
-                          .append(": Variable '").append(token.getValue())
-                          .append("' no está definida\n");
+            default:
+                // Para tokens que no tienen tipo específico, intentar inferir por valor
+                String tokenValue = token.getValue();
+                if (tokenValue != null) {
+                    // Detectar números enteros y decimales
+                    if (tokenValue.matches("\\d+(\\.\\d+)?")) {
+                        return "numeric";
+                    } 
+                    // Detectar strings - ser más flexible con las comillas
+                    else if ((tokenValue.startsWith("\"") && tokenValue.endsWith("\"")) ||
+                             (tokenValue.startsWith("'") && tokenValue.endsWith("'") && tokenValue.length() > 3)) {
+                        return "string";
+                    } 
+                    // Detectar caracteres individuales
+                    else if (tokenValue.startsWith("'") && tokenValue.endsWith("'") && tokenValue.length() == 3) {
+                        return "char";
+                    } 
+                    // Detectar booleanos
+                    else if (tokenValue.equals("True") || tokenValue.equals("False")) {
+                        return "boolean";
+                    }
+                    // Detectar strings sin comillas (caso especial para el lexer)
+                    else if (tokenValue.matches("[a-zA-Z]+") && !tokenValue.matches("\\d.*")) {
+                        // Si es una palabra sin números, podría ser un string literal sin comillas
+                        // Esto captura casos como 'hi' en lugar de '"hi"'
+                        return "string";
+                    }
                 }
-            }
-            
-            // Validar operadores
-            if (token.getType() == Token.Type.SYMBOL) {
-                String operator = token.getValue();
-                if (i > 0 && i < conditionTokens.size() - 1) {
-                    Token left = conditionTokens.get(i - 1);
-                    Token right = conditionTokens.get(i + 1);
-                    validateOperation(left, operator, right, errors, line);
-                }
-            }
-        }
-    }
-
-    private static void validateBody(List<Token> bodyTokens, StringBuilder errors) {
-        for (int i = 0; i < bodyTokens.size() - 2; i++) {
-            Token current = bodyTokens.get(i);
-            
-            // Validar asignaciones
-            if ((current.getType() == Token.Type.IDENTIFIER_VAR || current.getType() == Token.Type.IDENTIFIER_TYPE) &&
-                i + 1 < bodyTokens.size() && bodyTokens.get(i + 1).getValue().equals("=")) {
-                
-                Token value = bodyTokens.get(i + 2);
-                String expectedType = variableTypes.get(current.getValue());
-                String assignedType = inferType(value);
-                
-                if (expectedType == null) {
-                    // Primera asignación a la variable
-                    variableTypes.put(current.getValue(), assignedType);
-                } else if (!isCompatibleType(expectedType, assignedType)) {
-                    errors.append("ERROR en línea ").append(current.getLine())
-                          .append(": Tipo incompatible en asignación. Variable '")
-                          .append(current.getValue())
-                          .append("' es de tipo ").append(expectedType)
-                          .append(" pero se le intenta asignar un valor de tipo ")
-                          .append(assignedType).append("\n");
-                }
-
-                // Si el valor asignado es una operación, validar la operación
-                if (i + 4 < bodyTokens.size() && bodyTokens.get(i + 3).getType() == Token.Type.SYMBOL) {
-                    validateOperation(value, bodyTokens.get(i + 3).getValue(), bodyTokens.get(i + 4), errors, current.getLine());
-                }
-            }
+                return "unknown";
         }
     }
 
     private static boolean isCompatibleType(String type1, String type2) {
         if (type1 == null || type2 == null || type1.equals("unknown") || type2.equals("unknown")) 
-            return false;
+            return true; // Permitir unknown para evitar errores en cascada
             
         // Tipos idénticos son compatibles
         if (type1.equals(type2)) 
             return true;
             
-        // Numéricos son compatibles entre sí
-        if (type1.equals("numeric") && type2.equals("numeric")) 
-            return true;
+        // Ser más estricto: solo permitir conversiones muy específicas
+        // NO permitir conversiones automáticas entre string y numeric
+        if ((type1.equals("string") && type2.equals("numeric")) || 
+            (type1.equals("numeric") && type2.equals("string"))) {
+            return false; // Esta es la clave: NO permitir string <-> numeric
+        }
             
-        // Casos especiales
-        if (type1.equals("char") && type2.equals("string") || 
-            type1.equals("string") && type2.equals("char"))
+        // Solo permitir conversiones seguras entre char y string
+        if ((type1.equals("char") && type2.equals("string")) || 
+            (type1.equals("string") && type2.equals("char"))) {
             return true;
+        }
             
+        // Todas las demás combinaciones son incompatibles
         return false;
     }
 
-    private static void validateOperation(Token left, String operator, Token right, StringBuilder errors, int line) {
-        String leftType = inferType(left);
-        String rightType = inferType(right);
+    private static boolean areComparableTypes(String type1, String type2) {
+        if (type1 == null || type2 == null || type1.equals("unknown") || type2.equals("unknown")) 
+            return true; // Permitir unknown para evitar errores en cascada
+            
+        // Tipos idénticos siempre son comparables
+        if (type1.equals(type2)) 
+            return true;
+            
+        // Para comparaciones, ser muy estricto:
+        // NO permitir comparar string con numeric
+        if ((type1.equals("string") && type2.equals("numeric")) || 
+            (type1.equals("numeric") && type2.equals("string"))) {
+            return false;
+        }
+        
+        // NO permitir comparar boolean con otros tipos
+        if (type1.equals("boolean") || type2.equals("boolean")) {
+            return type1.equals("boolean") && type2.equals("boolean");
+        }
+        
+        // Solo permitir comparaciones muy específicas
+        // char y string pueden compararse
+        if ((type1.equals("char") && type2.equals("string")) || 
+            (type1.equals("string") && type2.equals("char"))) {
+            return true;
+        }
+        
+        // Todos los demás casos son incompatibles para comparación
+        return false;
+    }
 
-        // Validar que ambos operandos tengan tipos conocidos
-        if (leftType.equals("unknown")) {
-            errors.append("ERROR en línea ").append(line)
-                  .append(": Variable no definida o tipo desconocido '")
-                  .append(left.getValue()).append("'\n");
-            return;
+    private static String getExampleValue(String type) {
+        switch (type) {
+            case "numeric":
+                return "123 o 45.67";
+            case "string":
+                return "\"texto\"";
+            case "boolean":
+                return "True o False";
+            case "char":
+                return "'c'";
+            default:
+                return "valor del tipo " + type;
         }
-        if (rightType.equals("unknown")) {
-            errors.append("ERROR en línea ").append(line)
-                  .append(": Variable no definida o tipo desconocido '")
-                  .append(right.getValue()).append("'\n");
-            return;
-        }
+    }
 
-        // Validar operaciones aritméticas
-        if (numericOperators.contains(operator)) {
-            if (!leftType.equals("numeric") || !rightType.equals("numeric")) {
-                errors.append("ERROR en línea ").append(line)
-                      .append(": No se puede usar el operador '").append(operator)
-                      .append("' entre tipos '").append(leftType).append("' y '")
-                      .append(rightType).append("'. Se requieren operandos numéricos.\n");
-            }
-        } 
-        // Validar operadores booleanos
-        else if (booleanOperators.contains(operator)) {
-            if (operator.equals("&&") || operator.equals("||")) {
-                if (!leftType.equals("boolean") || !rightType.equals("boolean")) {
-                    errors.append("ERROR en línea ").append(line)
-                          .append(": Operador '").append(operator)
-                          .append("' requiere operandos booleanos\n");
+    private static void validateNumericExpression(List<Token> tokens, int line, StringBuilder errors, String context) {
+        // Validar que una expresión numérica sea coherente
+        for (int i = 0; i < tokens.size(); i++) {
+            Token token = tokens.get(i);
+            String tokenType = inferType(token);
+            
+            // Si encontramos un operador, verificar que los operandos sean numéricos
+            if (token.getType() == Token.Type.SYMBOL || token.getType() == Token.Type.OPERATOR) {
+                String op = token.getValue();
+                if (op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/")) {
+                    // Verificar operandos izquierdo y derecho
+                    if (i > 0) {
+                        String leftType = inferType(tokens.get(i - 1));
+                        if (!leftType.equals("numeric") && !leftType.equals("unknown")) {
+                            errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                                  .append(" - operando izquierdo del operador '").append(op)
+                                  .append("' no es numérico (tipo: ").append(leftType).append(")\n");
+                        }
+                    }
+                    if (i < tokens.size() - 1) {
+                        String rightType = inferType(tokens.get(i + 1));
+                        if (!rightType.equals("numeric") && !rightType.equals("unknown")) {
+                            errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                                  .append(" - operando derecho del operador '").append(op)
+                                  .append("' no es numérico (tipo: ").append(rightType).append(")\n");
+                        }
+                    }
                 }
-            } else {
-                // Para operadores de comparación (==, /=)
-                if (!leftType.equals(rightType)) {
-                    errors.append("ERROR en línea ").append(line)
-                          .append(": No se pueden comparar tipos diferentes: '")
-                          .append(leftType).append("' con '").append(rightType)
-                          .append("'\n");
-                }
-            }
-        }
-        // Validar concatenación de strings
-        else if (operator.equals("+") && (leftType.equals("string") || rightType.equals("string"))) {
-            if (!leftType.equals(rightType)) {
-                errors.append("ERROR en línea ").append(line)
-                      .append(": No se puede concatenar tipo '").append(leftType)
-                      .append("' con tipo '").append(rightType)
-                      .append("'. Ambos deben ser strings.\n");
+            } else if (!tokenType.equals("numeric") && !tokenType.equals("unknown")) {
+                // Token no numérico en expresión numérica
+                errors.append("ERROR: ").append(context).append(" en línea ").append(line)
+                      .append(" - token no numérico '").append(token.getValue())
+                      .append("' (tipo: ").append(tokenType).append(") en expresión numérica\n");
             }
         }
     }
+
 }
