@@ -45,6 +45,9 @@ class IdentifierNode extends AstNode {
 	@Override protected void buildTree(StringBuilder sb, int indent) {
 		indent(sb, indent); sb.append("Ident: ").append(name).append("\n");
 	}
+	
+	// Método de acceso para otras clases del paquete
+	public String getName() { return name; }
 }
 
 // Literales (string, int, float, char, bool)
@@ -54,6 +57,9 @@ class LiteralNode extends AstNode {
 	@Override protected void buildTree(StringBuilder sb, int indent) {
 		indent(sb, indent); sb.append("Literal(").append(token.getType()).append("): ").append(token.getValue()).append("\n");
 	}
+	
+	// Método de acceso para otras clases del paquete
+	public Token getToken() { return token; }
 }
 
 // If expression
@@ -105,6 +111,11 @@ class BinaryOpNode extends AstNode {
 		left.buildTree(sb, indent + 1);
 		right.buildTree(sb, indent + 1);
 	}
+	
+	// Métodos de acceso para otras clases del paquete
+	public String getOp() { return op; }
+	public AstNode getLeft() { return left; }
+	public AstNode getRight() { return right; }
 }
 
 // List node

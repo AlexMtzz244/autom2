@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
+import proyecto.lenguaje.codegen.ArithmeticExpressionConverter;
 
 public class SemanticValidator {
     private static final Map<String, String> variableTypes = new HashMap<>();
@@ -663,6 +664,118 @@ public class SemanticValidator {
                       .append("' (tipo: ").append(tokenType).append(") en expresión numérica\n");
             }
         }
+    }
+    
+    /**
+     * Método para demostrar la integración del conversor de expresiones aritméticas
+     * en el validador semántico
+     */
+    public static String demonstrateArithmeticConversion(List<Token> tokens) {
+        StringBuilder result = new StringBuilder();
+        result.append("=== ANÁLISIS DE EXPRESIONES ARITMÉTICAS ===\n");
+        
+        ArithmeticExpressionConverter converter = new ArithmeticExpressionConverter();
+        
+        // Buscar y convertir expresiones aritméticas en los tokens
+        List<String> expressions = extractArithmeticExpressions(tokens);
+        
+        if (expressions.isEmpty()) {
+            result.append("No se encontraron expresiones aritméticas en el código.\n");
+        } else {
+            result.append("Expresiones aritméticas encontradas: ").append(expressions.size()).append("\n\n");
+            
+            for (int i = 0; i < expressions.size(); i++) {
+                String expr = expressions.get(i);
+                result.append("--- Expresión ").append(i + 1).append(": ").append(expr).append(" ---\n");
+                
+                try {
+                    String prefix = converter.convertInfixStringToPrefix(expr);
+                    result.append("Notación Infijo:  ").append(expr).append("\n");
+                    result.append("Notación Prefijo: ").append(prefix).append("\n");
+                    result.append("✅ Conversión exitosa\n\n");
+                } catch (Exception e) {
+                    result.append("❌ Error en conversión: ").append(e.getMessage()).append("\n\n");
+                }
+            }
+            
+            result.append("=== INFORMACIÓN SOBRE CÓDIGO INTERMEDIO ===\n");
+            result.append("El algoritmo integrado utiliza TANTO tripletas como cuádruplos:\n");
+            result.append("• TRIPLETAS: (operador, operando1, operando2, resultado)\n");
+            result.append("• CUÁDRUPLOS: (operador, operando1, operando2, resultado)\n");
+            result.append("• Ambos generan código de 3 direcciones para compilación\n");
+            result.append("• Las tripletas son más compactas, los cuádruplos más explícitos\n");
+        }
+        
+        return result.toString();
+    }
+    
+    /**
+     * Extrae expresiones aritméticas de una lista de tokens
+     */
+    private static List<String> extractArithmeticExpressions(List<Token> tokens) {
+        List<String> expressions = new ArrayList<>();
+        StringBuilder currentExpr = new StringBuilder();
+        boolean inExpression = false;
+        
+        for (int i = 0; i < tokens.size(); i++) {
+            Token token = tokens.get(i);
+            
+            // Detectar inicio de expresión aritmética
+            if (isArithmeticToken(token)) {
+                if (!inExpression) {
+                    inExpression = true;
+                    currentExpr = new StringBuilder();
+                }
+                currentExpr.append(token.getValue());
+            } 
+            // Detectar operadores aritméticos
+            else if (inExpression && isArithmeticOperator(token)) {
+                currentExpr.append(token.getValue());
+            }
+            // Detectar final de expresión
+            else if (inExpression) {
+                // Si encontramos algo que no es aritmético, terminar la expresión
+                if (currentExpr.length() > 0) {
+                    String expr = currentExpr.toString().trim();
+                    if (expr.length() > 1 && containsOperator(expr)) { // Solo si tiene operadores
+                        expressions.add(expr);
+                    }
+                }
+                inExpression = false;
+                currentExpr = new StringBuilder();
+            }
+        }
+        
+        // Agregar la última expresión si quedó pendiente
+        if (inExpression && currentExpr.length() > 0) {
+            String expr = currentExpr.toString().trim();
+            if (expr.length() > 1 && containsOperator(expr)) {
+                expressions.add(expr);
+            }
+        }
+        
+        return expressions;
+    }
+    
+    private static boolean isArithmeticToken(Token token) {
+        return token.getType() == Token.Type.IDENTIFIER_VAR || 
+               token.getType() == Token.Type.INTEGER || 
+               token.getType() == Token.Type.FLOAT ||
+               (token.getType() == Token.Type.SYMBOL && 
+                ("(".equals(token.getValue()) || ")".equals(token.getValue())));
+    }
+    
+    private static boolean isArithmeticOperator(Token token) {
+        if (token.getType() == Token.Type.OPERATOR || token.getType() == Token.Type.SYMBOL) {
+            String op = token.getValue();
+            return "+".equals(op) || "-".equals(op) || "*".equals(op) || "/".equals(op) || "^".equals(op);
+        }
+        return false;
+    }
+    
+    private static boolean containsOperator(String expr) {
+        return expr.contains("+") || expr.contains("-") || expr.contains("*") || 
+               expr.contains("/") || expr.contains("^");
     }
 
 }

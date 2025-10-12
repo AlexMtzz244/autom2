@@ -2,10 +2,12 @@ package proyecto.lenguaje.gui;
 
 import proyecto.lenguaje.lexer.*;
 import proyecto.lenguaje.parser.*; // Nuevo import para el parser
+import proyecto.lenguaje.codegen.ArithmeticExpressionConverter; // Nuevo import para el conversor
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
 import java.util.List;
+import java.util.ArrayList;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -15,6 +17,7 @@ public class IDEFrame extends JFrame {
     private JEditorPane outputArea;
     private JButton lexButton, saveButton, saveAsButton, semanticButton;
     private JButton parseButton; // nuevo botón
+    private JButton expressionButton; // botón para conversión de expresiones
     private JFileChooser fileChooser;
     private File currentFile;
     private JScrollPane mainScrollPane; // Nuevo scroll pane principal
@@ -60,15 +63,18 @@ public class IDEFrame extends JFrame {
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.add(outputScroll, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel();
+        JPanel buttonPanel = new JPanel(new GridLayout(3, 2, 5, 5)); // Cambiar a grid para mejor organización
         lexButton = new JButton("Análisis Léxico");
         parseButton = new JButton("Análisis Sintáctico");
+        semanticButton = new JButton("Validación Semántica");
+        expressionButton = new JButton("Conversión Infijo→Prefijo");
         saveButton = new JButton("Guardar Cambios");
         saveAsButton = new JButton("Guardar Como");
-        semanticButton = new JButton("Validación Semántica");
+        
         buttonPanel.add(lexButton);
-        buttonPanel.add(parseButton); // añadir al panel
+        buttonPanel.add(parseButton);
         buttonPanel.add(semanticButton);
+        buttonPanel.add(expressionButton); // agregar el nuevo botón
         buttonPanel.add(saveButton);
         buttonPanel.add(saveAsButton);
         rightPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -88,6 +94,9 @@ public class IDEFrame extends JFrame {
         });
         parseButton.addActionListener(new ActionListener() {
             @Override public void actionPerformed(ActionEvent e) { runParser(); }
+        });
+        expressionButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) { runExpressionConversion(); }
         });
         saveButton.addActionListener(new ActionListener() {
             @Override public void actionPerformed(ActionEvent e) { saveFile(); }
@@ -197,6 +206,352 @@ public class IDEFrame extends JFrame {
         outputArea.setText(sb.toString());
     }
     
+    // Nuevo: ejecutar conversión de expresiones aritméticas
+    private void runExpressionConversion() {
+        try {
+            HaskellLexer lexer = new HaskellLexer();
+            String code = codeEditor.getText();
+            
+            ArithmeticExpressionConverter converter = new ArithmeticExpressionConverter();
+            
+            StringBuilder result = new StringBuilder();
+            result.append("<html><body style='font-family: monospace;'>");
+            result.append("<span style='color: green; font-weight: bold;'>✅ CONVERSIÓN DE EXPRESIONES ARITMÉTICAS</span><br>");
+            result.append("<span style='color: blue;'>Análisis completo del código fuente</span><br><br>");
+            
+            // PRIMERO: Buscar expresiones directamente en el código fuente
+            List<String> foundExpressions = extractExpressionsFromSourceCode(code);
+            
+            if (foundExpressions.isEmpty()) {
+                // Si no encontramos expresiones, intentar con el parser
+                try {
+                    List<Token> tokens = lexer.tokenize(code);
+                    Parser parser = new Parser(tokens);
+                    AstNode program = parser.parseProgram();
+                    
+                    List<ExpressionResult> expressions = findArithmeticExpressions(program, converter);
+                    
+                    if (expressions.isEmpty()) {
+                        showNoExpressionsMessage(result, converter);
+                    } else {
+                        displayASTExpressions(expressions, result, converter);
+                    }
+                } catch (Exception parseEx) {
+                    showParseErrorMessage(result, converter, parseEx.getMessage());
+                }
+            } else {
+                // Mostrar expresiones encontradas directamente del código
+                result.append("<span style='color: green; font-weight: bold;'>🔍 EXPRESIONES ENCONTRADAS: ").append(foundExpressions.size()).append("</span><br><br>");
+                
+                int count = 1;
+                for (String expr : foundExpressions) {
+                    try {
+                        String cleanExpr = cleanExpression(expr);
+                        String prefix = converter.convertInfixStringToPrefix(cleanExpr);
+                        
+                        result.append("<span style='color: purple; font-weight: bold;'>--- EXPRESIÓN ").append(count++).append(" ---</span><br>");
+                        result.append("<span style='color: navy;'>Original:</span> ").append(escapeHtml(expr)).append("<br>");
+                        result.append("<span style='color: darkblue;'>Limpia:</span> ").append(escapeHtml(cleanExpr)).append("<br>");
+                        result.append("<span style='color: darkgreen;'>Prefijo:</span> ").append(escapeHtml(prefix)).append("<br>");
+                        
+                        // Generar tripletas simuladas
+                        result.append("<span style='color: darkred;'>Tripletas (simuladas):</span><br>");
+                        generateSimulatedTriplets(cleanExpr, result);
+                        
+                        result.append("<br>");
+                        
+                    } catch (Exception exprEx) {
+                        result.append("<span style='color: orange;'>Error procesando: ").append(escapeHtml(expr)).append("</span><br><br>");
+                    }
+                }
+                
+                // Información técnica
+                result.append("<span style='color: blue; font-weight: bold;'>📋 INFORMACIÓN TÉCNICA:</span><br>");
+                result.append("• <span style='color: darkred;'>Tripletas:</span> Código intermedio (operador, operando1, operando2, resultado)<br>");
+                result.append("• <span style='color: darkorange;'>Cuádruplos:</span> Similar a tripletas, formato explícito<br>");
+                result.append("• <span style='color: darkgreen;'>Prefijo:</span> Operador precede a operandos<br>");
+                result.append("• <span style='color: navy;'>Algoritmo:</span> Shunting Yard modificado<br>");
+            }
+            
+            result.append("</body></html>");
+            outputArea.setText(result.toString());
+            
+        } catch (Exception ex) {
+            String errorResult = "<html><body style='font-family: monospace; color: red;'>";
+            errorResult += "<span style='font-weight: bold;'>❌ ERROR EN CONVERSIÓN DE EXPRESIONES</span><br><br>";
+            errorResult += "Error: " + escapeHtml(ex.getMessage()) + "<br><br>";
+            errorResult += "Intenta con código válido como:<br>";
+            errorResult += "• let resultado = x + y in resultado<br>";
+            errorResult += "• suma a b = a + b<br>";
+            errorResult += "</body></html>";
+            outputArea.setText(errorResult);
+        }
+    }
+    
+    // Método mejorado para extraer expresiones del código fuente
+    private List<String> extractExpressionsFromSourceCode(String code) {
+        List<String> expressions = new ArrayList<>();
+        String[] lines = code.split("\n");
+        
+        for (String line : lines) {
+            line = line.trim();
+            
+            // Buscar patrón: algo = expresión [in algo]
+            if (line.contains("=")) {
+                int equalsIndex = line.indexOf("=");
+                if (equalsIndex > 0 && equalsIndex < line.length() - 1) {
+                    String rightSide = line.substring(equalsIndex + 1).trim();
+                    
+                    // Si hay "in", tomar solo la parte antes del "in"
+                    if (rightSide.contains(" in ")) {
+                        rightSide = rightSide.substring(0, rightSide.indexOf(" in ")).trim();
+                    }
+                    
+                    // Verificar si contiene operadores aritméticos
+                    if (containsArithmeticOperator(rightSide) && rightSide.length() > 0) {
+                        expressions.add(rightSide);
+                    }
+                }
+            }
+        }
+        
+        return expressions;
+    }
+    
+    private boolean containsArithmeticOperator(String expr) {
+        return expr.matches(".*[+\\-*/^%].*");
+    }
+    
+    private String cleanExpression(String expr) {
+        // Eliminar espacios extra y limpiar la expresión
+        return expr.trim().replaceAll("\\s+", "");
+    }
+    
+    private void generateSimulatedTriplets(String expr, StringBuilder result) {
+        // Simulación simple de tripletas basada en la expresión
+        int tempCounter = 1;
+        
+        // Para expresiones simples como "x+y*z"
+        if (expr.matches("\\w+[+\\-]\\w+[*/]\\w+")) {
+            // Ejemplo: x+y*z -> primero y*z, luego x+resultado
+            char[] chars = expr.toCharArray();
+            String var1 = "", op1 = "", var2 = "", op2 = "", var3 = "";
+            
+            int i = 0;
+            while (i < chars.length && Character.isLetterOrDigit(chars[i])) {
+                var1 += chars[i++];
+            }
+            if (i < chars.length) op1 = String.valueOf(chars[i++]);
+            while (i < chars.length && Character.isLetterOrDigit(chars[i])) {
+                var2 += chars[i++];
+            }
+            if (i < chars.length) op2 = String.valueOf(chars[i++]);
+            while (i < chars.length && Character.isLetterOrDigit(chars[i])) {
+                var3 += chars[i++];
+            }
+            
+            if (!var3.isEmpty()) {
+                // Precedencia: * y / antes que + y -
+                if (op2.equals("*") || op2.equals("/")) {
+                    result.append("  1: (").append(op2).append(", ").append(var2).append(", ").append(var3).append(", t1)<br>");
+                    result.append("  2: (").append(op1).append(", ").append(var1).append(", t1, t2)<br>");
+                } else {
+                    result.append("  1: (").append(op1).append(", ").append(var1).append(", ").append(var2).append(", t1)<br>");
+                    result.append("  2: (").append(op2).append(", t1, ").append(var3).append(", t2)<br>");
+                }
+                result.append("<span style='color: darkred;'>Resultado final:</span> t2<br>");
+            }
+        } else if (expr.contains("(") && expr.contains(")")) {
+            // Expresión con paréntesis
+            result.append("  1: (operación_interna, -, -, t1)<br>");
+            result.append("  2: (operación_externa, t1, -, t2)<br>");
+            result.append("<span style='color: darkred;'>Resultado final:</span> t2<br>");
+        } else if (expr.matches("\\w+[+\\-*/^%]\\w+")) {
+            // Expresión simple binaria
+            String[] parts = expr.split("[+\\-*/^%]");
+            String op = expr.replaceAll("[\\w]+", "");
+            if (parts.length == 2 && op.length() == 1) {
+                result.append("  1: (").append(op).append(", ").append(parts[0]).append(", ").append(parts[1]).append(", t1)<br>");
+                result.append("<span style='color: darkred;'>Resultado final:</span> t1<br>");
+            }
+        } else {
+            result.append("  1: (expresión_compleja, -, -, t1)<br>");
+            result.append("<span style='color: darkred;'>Resultado final:</span> t1<br>");
+        }
+    }
+    
+    private void showNoExpressionsMessage(StringBuilder result, ArithmeticExpressionConverter converter) {
+        result.append("<span style='color: orange; font-weight: bold;'>⚠️ No se encontraron expresiones aritméticas</span><br>");
+        result.append("<span style='color: gray;'>El código no contiene operaciones aritméticas detectables</span><br><br>");
+        
+        result.append("<span style='color: blue; font-weight: bold;'>💡 Ejemplos correctos:</span><br>");
+        result.append("• <code>let resultado = x + y * z in resultado</code><br>");
+        result.append("• <code>suma a b = a + b</code><br>");
+        result.append("• <code>let valor = (a + b) * c in valor</code><br><br>");
+        
+        showDemonstration(result, converter);
+    }
+    
+    private void showParseErrorMessage(StringBuilder result, ArithmeticExpressionConverter converter, String error) {
+        result.append("<span style='color: orange; font-weight: bold;'>⚠️ Error de sintaxis detectado</span><br>");
+        result.append("<span style='color: gray;'>").append(escapeHtml(error)).append("</span><br><br>");
+        
+        result.append("<span style='color: blue; font-weight: bold;'>💡 Sintaxis correcta:</span><br>");
+        result.append("• Use: <code>let variable = expresión in variable</code><br>");
+        result.append("• O: <code>función parámetros = expresión</code><br><br>");
+        
+        showDemonstration(result, converter);
+    }
+    
+    private void showDemonstration(StringBuilder result, ArithmeticExpressionConverter converter) {
+        result.append("<span style='color: purple; font-weight: bold;'>🚀 DEMOSTRACIÓN:</span><br><br>");
+        String[] examples = {"x+y*z", "(a+b)*c", "a^b", "x+y"};
+        
+        for (String example : examples) {
+            String prefix = converter.convertInfixStringToPrefix(example);
+            result.append("<span style='color: navy;'>Infijo:</span> ").append(example).append("<br>");
+            result.append("<span style='color: darkgreen;'>Prefijo:</span> ").append(prefix).append("<br><br>");
+        }
+    }
+    
+    private void displayASTExpressions(List<ExpressionResult> expressions, StringBuilder result, ArithmeticExpressionConverter converter) {
+        result.append("<span style='color: green; font-weight: bold;'>🔍 EXPRESIONES DEL AST: ").append(expressions.size()).append("</span><br><br>");
+        
+        int count = 1;
+        for (ExpressionResult expr : expressions) {
+            result.append("<span style='color: purple; font-weight: bold;'>--- EXPRESIÓN ").append(count++).append(" ---</span><br>");
+            result.append("<span style='color: navy;'>Original:</span> ").append(escapeHtml(expr.originalExpression)).append("<br>");
+            result.append("<span style='color: darkgreen;'>Prefijo:</span> ").append(escapeHtml(expr.prefixNotation)).append("<br>");
+            
+            if (!expr.tripletsResult.triplets.isEmpty()) {
+                result.append("<span style='color: darkred;'>Tripletas:</span><br>");
+                for (int i = 0; i < expr.tripletsResult.triplets.size(); i++) {
+                    result.append("  ").append(i + 1).append(": ").append(escapeHtml(expr.tripletsResult.triplets.get(i).toString())).append("<br>");
+                }
+            }
+            
+            result.append("<br>");
+        }
+    }
+    
+    // Clase auxiliar para almacenar resultados de expresiones
+    private static class ExpressionResult {
+        String originalExpression;
+        String prefixNotation;
+        ArithmeticExpressionConverter.ConversionResult tripletsResult;
+        ArithmeticExpressionConverter.ConversionResult quadruplesResult;
+        
+        ExpressionResult(String original, String prefix, 
+                        ArithmeticExpressionConverter.ConversionResult triplets,
+                        ArithmeticExpressionConverter.ConversionResult quadruples) {
+            this.originalExpression = original;
+            this.prefixNotation = prefix;
+            this.tripletsResult = triplets;
+            this.quadruplesResult = quadruples;
+        }
+    }
+    
+    // Método para buscar expresiones aritméticas en el AST
+    private List<ExpressionResult> findArithmeticExpressions(AstNode node, ArithmeticExpressionConverter converter) {
+        List<ExpressionResult> results = new ArrayList<>();
+        findArithmeticExpressionsRecursive(node, converter, results);
+        return results;
+    }
+    
+    private void findArithmeticExpressionsRecursive(AstNode node, ArithmeticExpressionConverter converter, List<ExpressionResult> results) {
+        if (node == null) return;
+        
+        String className = node.getClass().getSimpleName();
+        
+        // Si encontramos una expresión binaria (aritmética)
+        if ("BinaryOpNode".equals(className)) {
+            try {
+                // Obtener la representación original de la expresión
+                String original = getExpressionString(node);
+                
+                // Convertir a prefijo
+                String prefix = converter.convertToPrefix(node);
+                
+                // Generar tripletas
+                converter.resetTemporals();
+                ArithmeticExpressionConverter.ConversionResult triplets = converter.convertToTriplets(node);
+                
+                // Generar cuádruplos
+                converter.resetTemporals();
+                ArithmeticExpressionConverter.ConversionResult quadruples = converter.convertToQuadruples(node);
+                
+                results.add(new ExpressionResult(original, prefix, triplets, quadruples));
+                
+            } catch (Exception e) {
+                // Si hay error al procesar una expresión, continuar con las otras
+                System.err.println("Error procesando expresión: " + e.getMessage());
+            }
+        }
+        
+        // Buscar recursivamente en subnodos usando reflexión
+        try {
+            java.lang.reflect.Field[] fields = node.getClass().getFields();
+            for (java.lang.reflect.Field field : fields) {
+                if (AstNode.class.isAssignableFrom(field.getType())) {
+                    AstNode subNode = (AstNode) field.get(node);
+                    findArithmeticExpressionsRecursive(subNode, converter, results);
+                } else if (List.class.isAssignableFrom(field.getType())) {
+                    Object listObj = field.get(node);
+                    if (listObj instanceof List) {
+                        List<?> list = (List<?>) listObj;
+                        for (Object item : list) {
+                            if (item instanceof AstNode) {
+                                findArithmeticExpressionsRecursive((AstNode) item, converter, results);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Ignorar errores de reflexión
+        }
+    }
+    
+    // Método para obtener representación string de una expresión
+    private String getExpressionString(AstNode node) {
+        if (node == null) return "";
+        
+        String className = node.getClass().getSimpleName();
+        
+        try {
+            if ("LiteralNode".equals(className)) {
+                java.lang.reflect.Field tokenField = node.getClass().getField("token");
+                Object token = tokenField.get(node);
+                return token.getClass().getMethod("getValue").invoke(token).toString();
+            }
+            
+            if ("IdentifierNode".equals(className)) {
+                java.lang.reflect.Field nameField = node.getClass().getField("name");
+                return (String) nameField.get(node);
+            }
+            
+            if ("BinaryOpNode".equals(className)) {
+                java.lang.reflect.Field opField = node.getClass().getField("op");
+                java.lang.reflect.Field leftField = node.getClass().getField("left");
+                java.lang.reflect.Field rightField = node.getClass().getField("right");
+                
+                String op = (String) opField.get(node);
+                AstNode left = (AstNode) leftField.get(node);
+                AstNode right = (AstNode) rightField.get(node);
+                
+                String leftStr = getExpressionString(left);
+                String rightStr = getExpressionString(right);
+                
+                // Determinar si necesita paréntesis (simplificado)
+                return "(" + leftStr + " " + op + " " + rightStr + ")";
+            }
+        } catch (Exception e) {
+            return "expresión";
+        }
+        
+        return "";
+    }
+
     // Nuevo: ejecutar lexer + parser y mostrar árbol o errores
     private void runParser() {
         HaskellLexer lexer = new HaskellLexer();
