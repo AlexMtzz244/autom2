@@ -243,18 +243,27 @@ public class IDEFrame extends JFrame {
                 // Mostrar expresiones encontradas directamente del código
                 result.append("<span style='color: green; font-weight: bold;'>🔍 EXPRESIONES ENCONTRADAS: ").append(foundExpressions.size()).append("</span><br><br>");
                 
+                // Construir mapa de variables con sus valores
+                java.util.Map<String, Double> variableValues = buildVariableMap(code);
+                
                 int count = 1;
                 for (ExpressionWithVariable exprWithVar : foundExpressions) {
                     try {
                         String expr = exprWithVar.expression;
                         String varName = exprWithVar.variableName;
+                        int lineNum = exprWithVar.lineNumber;
                         String cleanExpr = cleanExpression(expr);
                         String prefix = converter.convertInfixStringToPrefix(cleanExpr);
                         
-                        result.append("<span style='color: purple; font-weight: bold;'>--- EXPRESIÓN ").append(count++).append(" ---</span><br>");
+                        result.append("<span style='color: purple; font-weight: bold;'>--- EXPRESIÓN ").append(count++).append(" ---</span>");
+                        result.append(" <span style='color: gray; font-style: italic;'>(Línea ").append(lineNum).append(")</span><br>");
                         result.append("<span style='color: navy;'>Original:</span> ").append(escapeHtml(expr)).append("<br>");
                         result.append("<span style='color: darkblue;'>Limpia:</span> ").append(escapeHtml(cleanExpr)).append("<br>");
                         result.append("<span style='color: darkgreen;'>Prefijo:</span> ").append(escapeHtml(prefix)).append("<br>");
+                        
+                        // Intentar evaluar numéricamente
+                        String evaluation = evaluateExpression(cleanExpr, variableValues);
+                        result.append("<span style='color: darkmagenta;'>Evaluación:</span> ").append(escapeHtml(evaluation)).append("<br>");
                         
                         // Generar tripletas simuladas con resultado final
                         result.append("<span style='color: darkred;'>Tripletas (simuladas):</span><br>");
@@ -294,10 +303,12 @@ public class IDEFrame extends JFrame {
     private static class ExpressionWithVariable {
         String variableName;
         String expression;
+        int lineNumber;
         
-        ExpressionWithVariable(String variableName, String expression) {
+        ExpressionWithVariable(String variableName, String expression, int lineNumber) {
             this.variableName = variableName;
             this.expression = expression;
+            this.lineNumber = lineNumber;
         }
     }
     
@@ -306,8 +317,8 @@ public class IDEFrame extends JFrame {
         List<ExpressionWithVariable> expressions = new ArrayList<>();
         String[] lines = code.split("\n");
         
-        for (String line : lines) {
-            line = line.trim();
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
             
             // Buscar patrón: algo = expresión [in algo]
             if (line.contains("=")) {
@@ -325,13 +336,156 @@ public class IDEFrame extends JFrame {
                     if (containsArithmeticOperator(rightSide) && rightSide.length() > 0) {
                         // Extraer solo el nombre de la variable (primera palabra)
                         String varName = leftSide.split("\\s+")[0];
-                        expressions.add(new ExpressionWithVariable(varName, rightSide));
+                        expressions.add(new ExpressionWithVariable(varName, rightSide, i + 1)); // i+1 para línea basada en 1
                     }
                 }
             }
         }
         
         return expressions;
+    }
+    
+    // Método para construir un mapa de variables con sus valores numéricos
+    private java.util.Map<String, Double> buildVariableMap(String code) {
+        java.util.Map<String, Double> variables = new java.util.HashMap<>();
+        String[] lines = code.split("\n");
+        
+        for (String line : lines) {
+            line = line.trim();
+            
+            // Ignorar comentarios y líneas vacías
+            if (line.startsWith("--") || line.isEmpty()) {
+                continue;
+            }
+            
+            // Buscar patrón: variable = número
+            if (line.contains("=")) {
+                int equalsIndex = line.indexOf("=");
+                if (equalsIndex > 0 && equalsIndex < line.length() - 1) {
+                    String leftSide = line.substring(0, equalsIndex).trim();
+                    String rightSide = line.substring(equalsIndex + 1).trim();
+                    
+                    // Extraer solo el nombre de la variable (primera palabra)
+                    String varName = leftSide.split("\\s+")[0];
+                    
+                    // Intentar parsear el valor como número
+                    try {
+                        // Eliminar espacios y verificar si es un número
+                        String cleanValue = rightSide.trim();
+                        if (cleanValue.matches("-?\\d+(\\.\\d+)?")) {
+                            double value = Double.parseDouble(cleanValue);
+                            variables.put(varName, value);
+                        }
+                    } catch (NumberFormatException e) {
+                        // No es un número, ignorar
+                    }
+                }
+            }
+        }
+        
+        return variables;
+    }
+    
+    // Método para evaluar una expresión aritmética con valores reales
+    private String evaluateExpression(String expr, java.util.Map<String, Double> variables) {
+        try {
+            // Reemplazar variables por sus valores
+            String evaluatedExpr = expr;
+            for (java.util.Map.Entry<String, Double> entry : variables.entrySet()) {
+                String varName = entry.getKey();
+                Double value = entry.getValue();
+                
+                // Reemplazar la variable con su valor (asegurarse de reemplazar palabras completas)
+                evaluatedExpr = evaluatedExpr.replaceAll("\\b" + varName + "\\b", 
+                    value % 1 == 0 ? String.valueOf(value.intValue()) : String.valueOf(value));
+            }
+            
+            // Evaluar la expresión resultante
+            double result = evaluateArithmeticExpression(evaluatedExpr);
+            
+            // Formatear el resultado
+            if (result % 1 == 0) {
+                return String.format("%s = %.0f", evaluatedExpr, result);
+            } else {
+                return String.format("%s = %.2f", evaluatedExpr, result);
+            }
+        } catch (Exception e) {
+            return expr + " (no se pudo evaluar)";
+        }
+    }
+    
+    // Método para evaluar expresiones aritméticas simples
+    private double evaluateArithmeticExpression(String expr) throws Exception {
+        // Eliminar espacios
+        final String expression = expr.replaceAll("\\s+", "");
+        
+        // Usar un evaluador simple (para expresiones básicas)
+        return new Object() {
+            int pos = -1, ch;
+            
+            void nextChar() {
+                ch = (++pos < expression.length()) ? expression.charAt(pos) : -1;
+            }
+            
+            boolean eat(int charToEat) {
+                while (ch == ' ') nextChar();
+                if (ch == charToEat) {
+                    nextChar();
+                    return true;
+                }
+                return false;
+            }
+            
+            double parse() throws Exception {
+                nextChar();
+                double x = parseExpression();
+                if (pos < expression.length()) throw new Exception("Unexpected: " + (char)ch);
+                return x;
+            }
+            
+            double parseExpression() throws Exception {
+                double x = parseTerm();
+                for (;;) {
+                    if (eat('+')) x += parseTerm();
+                    else if (eat('-')) x -= parseTerm();
+                    else return x;
+                }
+            }
+            
+            double parseTerm() throws Exception {
+                double x = parseFactor();
+                for (;;) {
+                    if (eat('*')) x *= parseFactor();
+                    else if (eat('/')) x /= parseFactor();
+                    else if (eat('%')) x %= parseFactor();
+                    else return x;
+                }
+            }
+            
+            double parseFactor() throws Exception {
+                if (eat('+')) return parseFactor();
+                if (eat('-')) return -parseFactor();
+                
+                double x;
+                int startPos = this.pos;
+                if (eat('(')) {
+                    x = parseExpression();
+                    eat(')');
+                } else if ((ch >= '0' && ch <= '9') || ch == '.') {
+                    while ((ch >= '0' && ch <= '9') || ch == '.') nextChar();
+                    x = Double.parseDouble(expression.substring(startPos, this.pos));
+                } else if (ch >= 'a' && ch <= 'z') {
+                    while (ch >= 'a' && ch <= 'z') nextChar();
+                    throw new Exception("Variable not substituted: " + expression.substring(startPos, this.pos));
+                } else {
+                    throw new Exception("Unexpected: " + (char)ch);
+                }
+                
+                if (eat('^')) x = Math.pow(x, parseFactor());
+                
+                return x;
+            }
+        }.parse();
     }
     
     private boolean containsArithmeticOperator(String expr) {
