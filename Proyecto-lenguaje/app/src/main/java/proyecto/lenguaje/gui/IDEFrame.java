@@ -220,7 +220,7 @@ public class IDEFrame extends JFrame {
             result.append("<span style='color: blue;'>Análisis completo del código fuente</span><br><br>");
             
             // PRIMERO: Buscar expresiones directamente en el código fuente
-            List<String> foundExpressions = extractExpressionsFromSourceCode(code);
+            List<ExpressionWithVariable> foundExpressions = extractExpressionsFromSourceCode(code);
             
             if (foundExpressions.isEmpty()) {
                 // Si no encontramos expresiones, intentar con el parser
@@ -244,8 +244,10 @@ public class IDEFrame extends JFrame {
                 result.append("<span style='color: green; font-weight: bold;'>🔍 EXPRESIONES ENCONTRADAS: ").append(foundExpressions.size()).append("</span><br><br>");
                 
                 int count = 1;
-                for (String expr : foundExpressions) {
+                for (ExpressionWithVariable exprWithVar : foundExpressions) {
                     try {
+                        String expr = exprWithVar.expression;
+                        String varName = exprWithVar.variableName;
                         String cleanExpr = cleanExpression(expr);
                         String prefix = converter.convertInfixStringToPrefix(cleanExpr);
                         
@@ -254,14 +256,14 @@ public class IDEFrame extends JFrame {
                         result.append("<span style='color: darkblue;'>Limpia:</span> ").append(escapeHtml(cleanExpr)).append("<br>");
                         result.append("<span style='color: darkgreen;'>Prefijo:</span> ").append(escapeHtml(prefix)).append("<br>");
                         
-                        // Generar tripletas simuladas
+                        // Generar tripletas simuladas con resultado final
                         result.append("<span style='color: darkred;'>Tripletas (simuladas):</span><br>");
-                        generateSimulatedTriplets(cleanExpr, result);
+                        generateSimulatedTriplets(cleanExpr, result, prefix, varName);
                         
                         result.append("<br>");
                         
                     } catch (Exception exprEx) {
-                        result.append("<span style='color: orange;'>Error procesando: ").append(escapeHtml(expr)).append("</span><br><br>");
+                        result.append("<span style='color: orange;'>Error procesando: ").append(escapeHtml(exprWithVar.expression)).append("</span><br><br>");
                     }
                 }
                 
@@ -288,9 +290,20 @@ public class IDEFrame extends JFrame {
         }
     }
     
+    // Clase auxiliar para almacenar expresiones con su variable de asignación
+    private static class ExpressionWithVariable {
+        String variableName;
+        String expression;
+        
+        ExpressionWithVariable(String variableName, String expression) {
+            this.variableName = variableName;
+            this.expression = expression;
+        }
+    }
+    
     // Método mejorado para extraer expresiones del código fuente
-    private List<String> extractExpressionsFromSourceCode(String code) {
-        List<String> expressions = new ArrayList<>();
+    private List<ExpressionWithVariable> extractExpressionsFromSourceCode(String code) {
+        List<ExpressionWithVariable> expressions = new ArrayList<>();
         String[] lines = code.split("\n");
         
         for (String line : lines) {
@@ -300,6 +313,7 @@ public class IDEFrame extends JFrame {
             if (line.contains("=")) {
                 int equalsIndex = line.indexOf("=");
                 if (equalsIndex > 0 && equalsIndex < line.length() - 1) {
+                    String leftSide = line.substring(0, equalsIndex).trim();
                     String rightSide = line.substring(equalsIndex + 1).trim();
                     
                     // Si hay "in", tomar solo la parte antes del "in"
@@ -309,7 +323,9 @@ public class IDEFrame extends JFrame {
                     
                     // Verificar si contiene operadores aritméticos
                     if (containsArithmeticOperator(rightSide) && rightSide.length() > 0) {
-                        expressions.add(rightSide);
+                        // Extraer solo el nombre de la variable (primera palabra)
+                        String varName = leftSide.split("\\s+")[0];
+                        expressions.add(new ExpressionWithVariable(varName, rightSide));
                     }
                 }
             }
@@ -327,9 +343,9 @@ public class IDEFrame extends JFrame {
         return expr.trim().replaceAll("\\s+", "");
     }
     
-    private void generateSimulatedTriplets(String expr, StringBuilder result) {
+    private String generateSimulatedTriplets(String expr, StringBuilder result, String prefix, String varName) {
         // Simulación simple de tripletas basada en la expresión
-        int tempCounter = 1;
+        String finalTemp = "t1";
         
         // Para expresiones simples como "x+y*z"
         if (expr.matches("\\w+[+\\-]\\w+[*/]\\w+")) {
@@ -355,29 +371,72 @@ public class IDEFrame extends JFrame {
                 if (op2.equals("*") || op2.equals("/")) {
                     result.append("  1: (").append(op2).append(", ").append(var2).append(", ").append(var3).append(", t1)<br>");
                     result.append("  2: (").append(op1).append(", ").append(var1).append(", t1, t2)<br>");
+                    finalTemp = "t2";
+                    if (varName != null && !varName.isEmpty()) {
+                        result.append("  3: (=, t2, -, ").append(escapeHtml(varName)).append(")<br>");
+                    }
+                    result.append("<span style='color: darkred;'>Resultado final:</span> ");
+                    if (varName != null && !varName.isEmpty()) {
+                        result.append(escapeHtml(varName)).append("=");
+                    }
+                    result.append("t2=").append(escapeHtml(expr)).append("<br>");
                 } else {
                     result.append("  1: (").append(op1).append(", ").append(var1).append(", ").append(var2).append(", t1)<br>");
                     result.append("  2: (").append(op2).append(", t1, ").append(var3).append(", t2)<br>");
+                    finalTemp = "t2";
+                    if (varName != null && !varName.isEmpty()) {
+                        result.append("  3: (=, t2, -, ").append(escapeHtml(varName)).append(")<br>");
+                    }
+                    result.append("<span style='color: darkred;'>Resultado final:</span> ");
+                    if (varName != null && !varName.isEmpty()) {
+                        result.append(escapeHtml(varName)).append("=");
+                    }
+                    result.append("t2=").append(escapeHtml(expr)).append("<br>");
                 }
-                result.append("<span style='color: darkred;'>Resultado final:</span> t2<br>");
             }
         } else if (expr.contains("(") && expr.contains(")")) {
-            // Expresión con paréntesis
+            // Expresión con paréntesis - más detallada
             result.append("  1: (operación_interna, -, -, t1)<br>");
             result.append("  2: (operación_externa, t1, -, t2)<br>");
-            result.append("<span style='color: darkred;'>Resultado final:</span> t2<br>");
+            finalTemp = "t2";
+            if (varName != null && !varName.isEmpty()) {
+                result.append("  3: (=, t2, -, ").append(escapeHtml(varName)).append(")<br>");
+            }
+            result.append("<span style='color: darkred;'>Resultado final:</span> ");
+            if (varName != null && !varName.isEmpty()) {
+                result.append(escapeHtml(varName)).append("=");
+            }
+            result.append("t2=").append(escapeHtml(expr)).append("<br>");
         } else if (expr.matches("\\w+[+\\-*/^%]\\w+")) {
             // Expresión simple binaria
             String[] parts = expr.split("[+\\-*/^%]");
             String op = expr.replaceAll("[\\w]+", "");
             if (parts.length == 2 && op.length() == 1) {
                 result.append("  1: (").append(op).append(", ").append(parts[0]).append(", ").append(parts[1]).append(", t1)<br>");
-                result.append("<span style='color: darkred;'>Resultado final:</span> t1<br>");
+                finalTemp = "t1";
+                if (varName != null && !varName.isEmpty()) {
+                    result.append("  2: (=, t1, -, ").append(escapeHtml(varName)).append(")<br>");
+                }
+                result.append("<span style='color: darkred;'>Resultado final:</span> ");
+                if (varName != null && !varName.isEmpty()) {
+                    result.append(escapeHtml(varName)).append("=");
+                }
+                result.append("t1=").append(escapeHtml(expr)).append("<br>");
             }
         } else {
             result.append("  1: (expresión_compleja, -, -, t1)<br>");
-            result.append("<span style='color: darkred;'>Resultado final:</span> t1<br>");
+            finalTemp = "t1";
+            if (varName != null && !varName.isEmpty()) {
+                result.append("  2: (=, t1, -, ").append(escapeHtml(varName)).append(")<br>");
+            }
+            result.append("<span style='color: darkred;'>Resultado final:</span> ");
+            if (varName != null && !varName.isEmpty()) {
+                result.append(escapeHtml(varName)).append("=");
+            }
+            result.append("t1=").append(escapeHtml(expr)).append("<br>");
         }
+        
+        return finalTemp;
     }
     
     private void showNoExpressionsMessage(StringBuilder result, ArithmeticExpressionConverter converter) {
@@ -419,15 +478,22 @@ public class IDEFrame extends JFrame {
         
         int count = 1;
         for (ExpressionResult expr : expressions) {
+            String cleanExpr = cleanExpression(expr.originalExpression);
+            
             result.append("<span style='color: purple; font-weight: bold;'>--- EXPRESIÓN ").append(count++).append(" ---</span><br>");
             result.append("<span style='color: navy;'>Original:</span> ").append(escapeHtml(expr.originalExpression)).append("<br>");
+            result.append("<span style='color: darkblue;'>Limpia:</span> ").append(escapeHtml(cleanExpr)).append("<br>");
             result.append("<span style='color: darkgreen;'>Prefijo:</span> ").append(escapeHtml(expr.prefixNotation)).append("<br>");
             
             if (!expr.tripletsResult.triplets.isEmpty()) {
-                result.append("<span style='color: darkred;'>Tripletas:</span><br>");
+                result.append("<span style='color: darkred;'>Tripletas (simuladas):</span><br>");
                 for (int i = 0; i < expr.tripletsResult.triplets.size(); i++) {
                     result.append("  ").append(i + 1).append(": ").append(escapeHtml(expr.tripletsResult.triplets.get(i).toString())).append("<br>");
                 }
+                // Agregar resultado final con operador de asignación
+                String finalResult = expr.tripletsResult.finalResult;
+                result.append("<span style='color: darkred;'>Resultado final:</span> ")
+                      .append(finalResult).append("=").append(escapeHtml(cleanExpr)).append("<br>");
             }
             
             result.append("<br>");
