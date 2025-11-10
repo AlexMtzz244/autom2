@@ -60,14 +60,20 @@ public class HaskellLexer {
                 continue;
             }
             
-            // Manejar comentarios de línea
+            // Manejar comentarios de línea (prioridad alta para evitar conflictos con operadores)
             if (pos < input.length() - 1 && input.charAt(pos) == '-' && input.charAt(pos + 1) == '-') {
+                // Verificar que no sea parte de un operador más largo (como -->)
+                // En Haskell, -- siempre es comentario, no necesita verificación adicional
+                
                 // Buscar el final de la línea
                 int endComment = input.indexOf('\n', pos);
                 if (endComment == -1) {
-                    endComment = input.length();
+                    // Si no hay más saltos de línea, el comentario va hasta el final
+                    pos = input.length();
+                } else {
+                    // Posicionar en el salto de línea (será procesado en la siguiente iteración)
+                    pos = endComment;
                 }
-                pos = endComment;
                 continue;
             }
             

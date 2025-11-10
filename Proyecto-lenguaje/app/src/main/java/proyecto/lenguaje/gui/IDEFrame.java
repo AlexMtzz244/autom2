@@ -3,6 +3,7 @@ package proyecto.lenguaje.gui;
 import proyecto.lenguaje.lexer.*;
 import proyecto.lenguaje.parser.*; // Nuevo import para el parser
 import proyecto.lenguaje.codegen.ArithmeticExpressionConverter; // Nuevo import para el conversor
+import proyecto.lenguaje.codegen.CodeOptimizer; // Nuevo import para el optimizador
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
@@ -18,6 +19,7 @@ public class IDEFrame extends JFrame {
     private JButton lexButton, saveButton, saveAsButton, semanticButton;
     private JButton parseButton; // nuevo botón
     private JButton expressionButton; // botón para conversión de expresiones
+    private JButton optimizeButton; // botón para optimización de código
     private JFileChooser fileChooser;
     private File currentFile;
     private JScrollPane mainScrollPane; // Nuevo scroll pane principal
@@ -63,18 +65,21 @@ public class IDEFrame extends JFrame {
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.add(outputScroll, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(3, 2, 5, 5)); // Cambiar a grid para mejor organización
+        JPanel buttonPanel = new JPanel(new GridLayout(4, 2, 5, 5)); // Cambiar a 4x2 para incluir optimización
         lexButton = new JButton("Análisis Léxico");
         parseButton = new JButton("Análisis Sintáctico");
         semanticButton = new JButton("Validación Semántica");
         expressionButton = new JButton("Conversión Infijo→Prefijo");
+        optimizeButton = new JButton("🚀 Optimizar Código");
         saveButton = new JButton("Guardar Cambios");
         saveAsButton = new JButton("Guardar Como");
         
         buttonPanel.add(lexButton);
         buttonPanel.add(parseButton);
         buttonPanel.add(semanticButton);
-        buttonPanel.add(expressionButton); // agregar el nuevo botón
+        buttonPanel.add(expressionButton);
+        buttonPanel.add(optimizeButton); // agregar el botón de optimización
+        buttonPanel.add(new JLabel()); // espacio vacío
         buttonPanel.add(saveButton);
         buttonPanel.add(saveAsButton);
         rightPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -97,6 +102,9 @@ public class IDEFrame extends JFrame {
         });
         expressionButton.addActionListener(new ActionListener() {
             @Override public void actionPerformed(ActionEvent e) { runExpressionConversion(); }
+        });
+        optimizeButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) { runCodeOptimization(); }
         });
         saveButton.addActionListener(new ActionListener() {
             @Override public void actionPerformed(ActionEvent e) { saveFile(); }
@@ -186,6 +194,21 @@ public class IDEFrame extends JFrame {
         sb.append("<br><strong>--- RESUMEN ---</strong><br>");
         sb.append("Total de tokens: ").append(tokens.size()).append("<br>");
         sb.append("Errores léxicos: ").append(errorCount).append("<br>");
+        
+        // Detectar comentarios en el código fuente
+        long lineComments = code.lines().filter(line -> line.trim().startsWith("--")).count();
+        boolean hasBlockComments = code.contains("{-") && code.contains("-}");
+        
+        if (lineComments > 0 || hasBlockComments) {
+            sb.append("<br><span style='color: blue;'>📝 Comentarios procesados:</span><br>");
+            if (lineComments > 0) {
+                sb.append("  - Comentarios de línea (--): ").append(lineComments).append("<br>");
+            }
+            if (hasBlockComments) {
+                sb.append("  - Comentarios multilínea ({- -}): Sí<br>");
+            }
+            sb.append("<span style='color: gray; font-size: 10px;'>(Los comentarios se ignoran durante el análisis léxico)</span><br>");
+        }
         
         if (errorCount == 0) {
             sb.append("<br><span style='color: green; font-weight: bold;'>✅ ANÁLISIS LÉXICO EXITOSO</span><br>");
@@ -850,6 +873,107 @@ public class IDEFrame extends JFrame {
         if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             currentFile = fileChooser.getSelectedFile();
             saveFile();
+        }
+    }
+
+    // Nuevo: Optimización de código
+    private void runCodeOptimization() {
+        try {
+            String code = codeEditor.getText();
+            
+            if (code.trim().isEmpty()) {
+                outputArea.setText("<html><body style='font-family: monospace; color: orange;'>" +
+                                 "⚠️ No hay código para optimizar</body></html>");
+                return;
+            }
+            
+            CodeOptimizer optimizer = new CodeOptimizer();
+            CodeOptimizer.OptimizationResult result = optimizer.optimize(code);
+            
+            StringBuilder output = new StringBuilder();
+            output.append("<html><body style='font-family: monospace;'>");
+            
+            if (result.success) {
+                output.append("<span style='color: green; font-weight: bold; font-size: 14px;'>")
+                      .append("✅ OPTIMIZACIÓN EXITOSA</span><br><br>");
+                
+                output.append("<span style='color: blue; font-weight: bold;'>📊 ESTADÍSTICAS:</span><br>");
+                output.append("  • Comentarios eliminados: <b>").append(result.commentsRemoved).append("</b><br>");
+                output.append("  • Espacios optimizados: <b>").append(result.spacesOptimized).append(" caracteres</b><br>");
+                output.append("  • Subexpresiones comunes eliminadas: <b>").append(result.subexpressionsEliminated).append("</b><br><br>");
+                
+                output.append("<span style='color: blue; font-weight: bold;'>📝 LOG DE OPTIMIZACIÓN:</span><br>");
+                output.append("<div style='background-color: #f0f0f0; padding: 10px; border-left: 3px solid #4CAF50;'>");
+                for (String log : result.log) {
+                    output.append(escapeHtml(log)).append("<br>");
+                }
+                output.append("</div><br>");
+                
+                // Preguntar al usuario dónde guardar el archivo optimizado
+                JFileChooser saveChooser = new JFileChooser();
+                saveChooser.setDialogTitle("Guardar código optimizado");
+                
+                // Sugerir nombre de archivo
+                if (currentFile != null) {
+                    String baseName = currentFile.getName().replaceFirst("[.][^.]+$", "");
+                    saveChooser.setSelectedFile(new File(currentFile.getParent(), baseName + "_optimizado.txt"));
+                } else {
+                    saveChooser.setSelectedFile(new File("codigo_optimizado.txt"));
+                }
+                
+                int userSelection = saveChooser.showSaveDialog(this);
+                
+                if (userSelection == JFileChooser.APPROVE_OPTION) {
+                    File fileToSave = saveChooser.getSelectedFile();
+                    
+                    try (FileWriter fw = new FileWriter(fileToSave)) {
+                        fw.write(result.optimizedCode);
+                        output.append("<br><span style='color: green; font-weight: bold;'>")
+                              .append("💾 Código optimizado guardado en:</span><br>");
+                        output.append("<span style='color: #0066cc;'>")
+                              .append(escapeHtml(fileToSave.getAbsolutePath()))
+                              .append("</span><br><br>");
+                        
+                        output.append("<span style='color: gray; font-size: 11px;'>")
+                              .append("Nota: El archivo optimizado está listo para su uso. ")
+                              .append("Puede abrirlo y verificar los cambios realizados.")
+                              .append("</span>");
+                    } catch (IOException ex) {
+                        output.append("<br><span style='color: red; font-weight: bold;'>")
+                              .append("❌ ERROR AL GUARDAR: ")
+                              .append(escapeHtml(ex.getMessage()))
+                              .append("</span>");
+                    }
+                } else {
+                    output.append("<br><span style='color: orange;'>")
+                          .append("⚠️ Guardado cancelado. El código optimizado no se guardó.")
+                          .append("</span>");
+                }
+                
+            } else {
+                output.append("<span style='color: red; font-weight: bold; font-size: 14px;'>")
+                      .append("❌ OPTIMIZACIÓN FALLIDA</span><br><br>");
+                output.append("<span style='color: red;'>Error: ")
+                      .append(escapeHtml(result.errorMessage))
+                      .append("</span><br><br>");
+                
+                output.append("<span style='color: blue; font-weight: bold;'>📝 LOG:</span><br>");
+                for (String log : result.log) {
+                    output.append(escapeHtml(log)).append("<br>");
+                }
+            }
+            
+            output.append("</body></html>");
+            outputArea.setText(output.toString());
+            
+        } catch (Exception e) {
+            String errorOutput = "<html><body style='font-family: monospace;'>" +
+                               "<span style='color: red; font-weight: bold;'>❌ ERROR INESPERADO</span><br>" +
+                               "<span style='color: red;'>Excepción: " + escapeHtml(e.getMessage()) + "</span><br>" +
+                               "<span style='color: gray;'>Por favor, reporte este error.</span>" +
+                               "</body></html>";
+            outputArea.setText(errorOutput);
+            e.printStackTrace();
         }
     }
 

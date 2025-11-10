@@ -1,0 +1,78 @@
+===============================================
+   GUÍA DE COMENTARIOS EN HASKELL
+===============================================
+
+El lexer ahora soporta completamente los comentarios
+estándar de Haskell:
+
+1. COMENTARIOS DE LÍNEA (--):
+   ------------------------------
+   -- Este es un comentario de línea
+   x = 5 -- comentario al final de línea
+   
+   ✓ Todo lo que aparece después de -- hasta el
+     final de la línea es ignorado por el lexer
+   
+   ✓ Se pueden usar para documentar código
+   ✓ Se pueden anidar múltiples comentarios:
+     -- comentario 1
+     -- comentario 2
+     -- comentario 3
+
+2. COMENTARIOS MULTILÍNEA ({- -}):
+   ---------------------------------
+   {- Este es un comentario
+      que abarca múltiples
+      líneas de código -}
+   
+   ✓ Útiles para documentación extensa
+   ✓ Se pueden anidar comentarios multilínea:
+     {- comentario externo
+        {- comentario interno -}
+        más texto -}
+
+3. EJEMPLOS PRÁCTICOS:
+   --------------------
+   
+   -- Función para sumar dos números
+   suma a b = a + b  -- parámetros a y b
+   
+   {- Función factorial
+      Calcula n! usando recursión
+      Parámetro: n (entero positivo)
+      Retorno: n! (entero) -}
+   factorial n = if n <= 1 then 1 else n * factorial (n - 1)
+   
+   -- Lista de números pares
+   pares = [2, 4, 6, 8]  -- primeros 4 números pares
+
+4. NOTAS IMPORTANTES:
+   -------------------
+   ✓ Los comentarios NO generan tokens
+   ✓ Los comentarios NO afectan el análisis léxico
+   ✓ Útiles para documentar y explicar código
+   ✓ El IDE muestra cuántos comentarios procesó
+   
+5. BUENAS PRÁCTICAS:
+   ------------------
+   • Use -- para comentarios breves
+   • Use {- -} para documentación extensa
+   • Comente código complejo
+   • Explique algoritmos no obvios
+   • Documente funciones importantes
+
+===============================================
+   RESULTADO EN EL ANÁLISIS LÉXICO
+===============================================
+
+El IDE muestra información sobre comentarios:
+
+📝 Comentarios procesados:
+  - Comentarios de línea (--): 5
+  - Comentarios multilínea ({- -}): Sí
+(Los comentarios se ignoran durante el análisis léxico)
+
+✅ Todos los comentarios son procesados correctamente
+   y no generan errores léxicos.
+
+===============================================

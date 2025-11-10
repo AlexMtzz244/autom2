@@ -1,11 +1,17 @@
+-- Ejemplos de código Haskell con comentarios
+-- Este archivo demuestra el uso de comentarios de línea
 
-x = 10
-y = 20
+-- Variables numéricas básicas
+x = 10  -- variable x
+y = 20  -- variable y
 z = 5
 edad = 25
 precio = 99.99
-temperatura = -10.5
+temperatura = -10.5  -- temperatura negativa
 
+{- Comentario multilínea:
+   Variables de tipo texto y carácter
+   Se pueden usar para documentación extensa -}
 nombre = "Juan"
 apellido = "Perez"
 ciudad = "Madrid"

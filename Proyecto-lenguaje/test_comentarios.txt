@@ -1,0 +1,16 @@
+-- Este es un comentario de línea simple
+x = 5 -- comentario al final de la línea
+
+-- Función con comentario
+suma a b = a + b  -- suma dos números
+
+{- Comentario
+   multilínea -}
+y = 10
+
+-- Múltiples comentarios
+-- en líneas consecutivas
+z = x + y
+
+-- Comentario con símbolos especiales: @#$%^&*()
+resultado = suma x y -- resultado final

@@ -1,0 +1,29 @@
+-- Ejemplo de código con comentarios y subexpresiones comunes
+-- Este código será optimizado por el sistema
+
+-- Variables básicas
+x = 10
+y = 20
+z = 5
+
+{- Cálculos con subexpresiones comunes
+   Nota: x + y aparece múltiples veces -}
+resultado1 = x + y      -- primera aparición de x + y
+resultado2 = (x + y) * 2    -- segunda aparición de x + y
+resultado3 = x + y + z  -- tercera aparición de x + y
+
+-- Más subexpresiones comunes
+a = 100
+b = 50
+c = a + b       -- primera aparición de a + b
+d = a + b + 10  -- segunda aparición de a + b
+e = (a + b) * 3 -- tercera aparición de a + b
+
+{- Operaciones adicionales
+   con espacios innecesarios -}
+suma     =     x    +    y    +    z   -- espacios múltiples
+resta    =     x    -    y            -- más espacios
+producto =     x    *    y            -- aún más espacios
+
+-- Comentario final: este código tiene muchos comentarios y espacios
+-- que serán eliminados durante la optimización

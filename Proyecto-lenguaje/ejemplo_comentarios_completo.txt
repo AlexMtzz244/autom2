@@ -1,0 +1,44 @@
+-- ====================================
+-- EJEMPLO COMPLETO CON COMENTARIOS
+-- ====================================
+
+-- Variables básicas
+x = 42  -- la respuesta a todo
+y = 10
+z = x + y  -- suma de x e y
+
+{- Función principal
+   Demuestra el uso de comentarios
+   en diferentes contextos -}
+main = resultado
+
+-- Operaciones aritméticas
+suma = x + y       -- suma
+resta = x - y      -- resta  
+multiplicacion = x * y  -- multiplicación
+division = x / y   -- división
+
+{- 
+   Listas de ejemplo
+   Diferentes tipos de datos
+-}
+numeros = [1, 2, 3, 4, 5]  -- lista de enteros
+nombres = ["Ana", "Luis"]  -- lista de strings
+
+-- Tuplas
+punto = (10, 20)  -- coordenadas x, y
+persona = ("Juan", 30, True)  -- nombre, edad, activo
+
+-- Booleanos
+verdadero = True   -- valor verdadero
+falso = False      -- valor falso
+
+{- NOTA IMPORTANTE:
+   Todos estos comentarios serán
+   ignorados durante el análisis léxico
+   y no generarán ningún error -}
+
+-- Resultado final
+resultado = suma + resta  -- cálculo final
+
+-- Fin del ejemplo

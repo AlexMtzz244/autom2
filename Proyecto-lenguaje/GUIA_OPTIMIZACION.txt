@@ -1,0 +1,156 @@
+===============================================
+   OPTIMIZADOR DE CÓDIGO HASKELL
+===============================================
+
+El IDE ahora incluye una potente herramienta de
+optimización que transforma tu código para hacerlo
+más eficiente y limpio.
+
+═══════════════════════════════════════════════
+📋 CARACTERÍSTICAS
+═══════════════════════════════════════════════
+
+1. ELIMINACIÓN DE COMENTARIOS
+   ---------------------------
+   ✓ Elimina comentarios de línea (--)
+   ✓ Elimina comentarios multilínea ({- -})
+   ✓ Preserva la estructura del código
+   
+   ANTES:
+   -- Este es un comentario
+   x = 5  -- valor de x
+   
+   DESPUÉS:
+   x = 5
+
+2. OPTIMIZACIÓN DE ESPACIOS
+   --------------------------
+   ✓ Elimina espacios múltiples
+   ✓ Elimina líneas vacías excesivas
+   ✓ Elimina espacios al inicio/final de líneas
+   
+   ANTES:
+   x     =     5    +    10
+   
+   DESPUÉS:
+   x = 5 + 10
+
+3. ELIMINACIÓN DE SUBEXPRESIONES COMUNES (CSE)
+   --------------------------------------------
+   ✓ Detecta expresiones repetidas
+   ✓ Extrae subexpresiones en variables temporales
+   ✓ Reduce duplicación de código
+   
+   ANTES:
+   resultado1 = x + y
+   resultado2 = (x + y) * 2
+   resultado3 = x + y + z
+   
+   DESPUÉS:
+   cse_0 = x + y
+   resultado1 = cse_0
+   resultado2 = cse_0 * 2
+   resultado3 = cse_0 + z
+
+═══════════════════════════════════════════════
+🚀 CÓMO USAR
+═══════════════════════════════════════════════
+
+1. Escribe o carga tu código Haskell en el editor
+2. Haz clic en el botón "🚀 Optimizar Código"
+3. El sistema analiza y optimiza el código
+4. Selecciona dónde guardar el archivo optimizado
+5. Revisa las estadísticas de optimización
+
+═══════════════════════════════════════════════
+📊 INFORMACIÓN QUE MUESTRA
+═══════════════════════════════════════════════
+
+• Comentarios eliminados
+• Espacios optimizados (caracteres)
+• Subexpresiones comunes eliminadas
+• Log detallado del proceso
+• Tamaño original vs. optimizado
+• Porcentaje de reducción
+
+═══════════════════════════════════════════════
+✅ MENSAJES DE ÉXITO/ERROR
+═══════════════════════════════════════════════
+
+ÉXITO:
+  ✅ OPTIMIZACIÓN EXITOSA
+  - Muestra estadísticas completas
+  - Genera archivo optimizado
+  - Log detallado del proceso
+
+ERROR:
+  ❌ OPTIMIZACIÓN FALLIDA
+  - Mensaje de error específico
+  - Log de depuración
+  - Información para corrección
+
+═══════════════════════════════════════════════
+💡 EJEMPLO COMPLETO
+═══════════════════════════════════════════════
+
+CÓDIGO ORIGINAL (ejemplo_para_optimizar.txt):
+
+-- Ejemplo con comentarios
+x = 10
+y = 20
+
+{- Cálculos con subexpresiones -}
+resultado1 = x + y
+resultado2 = (x + y) * 2
+resultado3 = x + y + z
+
+suma     =     x    +    y
+-- fin del ejemplo
+
+CÓDIGO OPTIMIZADO:
+
+cse_0 = x + y
+x = 10
+y = 20
+resultado1 = cse_0
+resultado2 = cse_0 * 2
+resultado3 = cse_0 + z
+suma = x + y
+
+ESTADÍSTICAS:
+• Comentarios eliminados: 3
+• Espacios optimizados: 45 caracteres
+• Subexpresiones comunes: 1
+• Reducción total: 32.5%
+
+═══════════════════════════════════════════════
+⚠️ CONSIDERACIONES IMPORTANTES
+═══════════════════════════════════════════════
+
+1. Siempre guarda una copia del código original
+2. Revisa el código optimizado antes de usarlo
+3. Las subexpresiones se nombran como: cse_0, cse_1, etc.
+4. El archivo optimizado se guarda con sufijo "_optimizado"
+5. La optimización es conservadora y segura
+
+═══════════════════════════════════════════════
+🎯 CASOS DE USO
+═══════════════════════════════════════════════
+
+✓ Preparar código para producción
+✓ Reducir tamaño de archivos
+✓ Mejorar legibilidad eliminando comentarios
+✓ Optimizar expresiones repetitivas
+✓ Limpiar código con formato inconsistente
+
+═══════════════════════════════════════════════
+📁 ARCHIVOS GENERADOS
+═══════════════════════════════════════════════
+
+Si tu archivo original se llama: codigo.txt
+El archivo optimizado será: codigo_optimizado.txt
+
+El IDE te permite elegir el nombre y ubicación
+del archivo optimizado.
+
+═══════════════════════════════════════════════
