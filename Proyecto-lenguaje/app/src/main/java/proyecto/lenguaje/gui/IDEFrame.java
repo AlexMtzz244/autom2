@@ -147,17 +147,26 @@ public class IDEFrame extends JFrame {
 
     // Validación semántica de ciclos
     private void runSemanticCycleValidation() {
+        long startTime = System.currentTimeMillis();
+        
         HaskellLexer lexer = new HaskellLexer();
         String code = codeEditor.getText();
         List<Token> tokens = lexer.tokenize(code);
         String result = SemanticValidator.validateCycles(tokens);
         
+        long endTime = System.currentTimeMillis();
+        long executionTime = endTime - startTime;
+        
         // Agregar mensaje de éxito al inicio si no hay errores semánticos
         String successPrefix = "";
         if (!result.contains("ERROR") && !result.contains("ERRORES SEMÁNTICOS")) {
             successPrefix = "<span style='color: green; font-weight: bold;'>✅ VALIDACIÓN SEMÁNTICA EXITOSA</span><br>" +
-                           "<span style='color: green;'>No se encontraron errores semánticos en el código.</span><br><br>" +
+                           "<span style='color: green;'>No se encontraron errores semánticos en el código.</span><br>" +
+                           "<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>" + executionTime + " ms</b></span><br><br>" +
                            "<span style='color: blue; font-weight: bold;'>Resultado del análisis:</span><br><br>";
+        } else {
+            successPrefix = "<span style='color: red; font-weight: bold;'>❌ ERRORES SEMÁNTICOS ENCONTRADOS</span><br>" +
+                           "<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>" + executionTime + " ms</b></span><br><br>";
         }
         
         // Convertir texto plano a HTML básico para mantener formato
@@ -169,9 +178,15 @@ public class IDEFrame extends JFrame {
     }
 
     private void runLexicalAnalysis() {
+        long startTime = System.currentTimeMillis();
+        
         HaskellLexer lexer = new HaskellLexer();
         String code = codeEditor.getText();
         List<Token> tokens = lexer.tokenize(code);
+        
+        long endTime = System.currentTimeMillis();
+        long executionTime = endTime - startTime;
+        
         StringBuilder sb = new StringBuilder();
         
         // Iniciar HTML
@@ -194,6 +209,7 @@ public class IDEFrame extends JFrame {
         sb.append("<br><strong>--- RESUMEN ---</strong><br>");
         sb.append("Total de tokens: ").append(tokens.size()).append("<br>");
         sb.append("Errores léxicos: ").append(errorCount).append("<br>");
+        sb.append("<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>").append(executionTime).append(" ms</b></span><br>");
         
         // Detectar comentarios en el código fuente
         long lineComments = code.lines().filter(line -> line.trim().startsWith("--")).count();
@@ -231,6 +247,8 @@ public class IDEFrame extends JFrame {
     
     // Nuevo: ejecutar conversión de expresiones aritméticas
     private void runExpressionConversion() {
+        long startTime = System.currentTimeMillis();
+        
         try {
             HaskellLexer lexer = new HaskellLexer();
             String code = codeEditor.getText();
@@ -240,10 +258,15 @@ public class IDEFrame extends JFrame {
             StringBuilder result = new StringBuilder();
             result.append("<html><body style='font-family: monospace;'>");
             result.append("<span style='color: green; font-weight: bold;'>✅ CONVERSIÓN DE EXPRESIONES ARITMÉTICAS</span><br>");
-            result.append("<span style='color: blue;'>Análisis completo del código fuente</span><br><br>");
+            result.append("<span style='color: blue;'>Análisis completo del código fuente</span><br>");
             
             // PRIMERO: Buscar expresiones directamente en el código fuente
             List<ExpressionWithVariable> foundExpressions = extractExpressionsFromSourceCode(code);
+            
+            long endTime = System.currentTimeMillis();
+            long executionTime = endTime - startTime;
+            
+            result.append("<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>").append(executionTime).append(" ms</b></span><br><br>");
             
             if (foundExpressions.isEmpty()) {
                 // Si no encontramos expresiones, intentar con el parser
@@ -790,17 +813,24 @@ public class IDEFrame extends JFrame {
 
     // Nuevo: ejecutar lexer + parser y mostrar árbol o errores
     private void runParser() {
+        long startTime = System.currentTimeMillis();
+        
         HaskellLexer lexer = new HaskellLexer();
         String code = codeEditor.getText();
         List<Token> tokens = lexer.tokenize(code);
         Parser parser = new Parser(tokens);
+        
         try {
             AstNode program = parser.parseProgram();
             String tree = program.toTreeString();
             
+            long endTime = System.currentTimeMillis();
+            long executionTime = endTime - startTime;
+            
             // Mensaje de éxito agregado
             String successMessage = "<span style='color: green; font-weight: bold;'>✅ ANÁLISIS SINTÁCTICO EXITOSO</span><br>" +
-                                   "<span style='color: green;'>El programa ha sido analizado correctamente sin errores sintácticos.</span><br><br>" +
+                                   "<span style='color: green;'>El programa ha sido analizado correctamente sin errores sintácticos.</span><br>" +
+                                   "<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>" + executionTime + " ms</b></span><br><br>" +
                                    "<span style='color: blue; font-weight: bold;'>Árbol de Sintaxis Abstracta (AST):</span><br><br>";
             
             String htmlResult = "<html><body style='font-family: monospace; white-space: pre;'>" 
@@ -809,12 +839,16 @@ public class IDEFrame extends JFrame {
                               + "</body></html>";
             outputArea.setText(htmlResult);
         } catch (Parser.ParseException ex) {
+            long endTime = System.currentTimeMillis();
+            long executionTime = endTime - startTime;
+            
             // Formatear múltiples errores, cada uno en una línea separada
             String errorMessage = ex.getMessage();
             String[] errors = errorMessage.split("\\n");
             
             StringBuilder formattedErrors = new StringBuilder();
-            formattedErrors.append("<span style='color: red; font-weight: bold;'>❌ ERRORES SINTÁCTICOS ENCONTRADOS:</span><br><br>");
+            formattedErrors.append("<span style='color: red; font-weight: bold;'>❌ ERRORES SINTÁCTICOS ENCONTRADOS:</span><br>");
+            formattedErrors.append("<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>").append(executionTime).append(" ms</b></span><br><br>");
             
             for (int i = 0; i < errors.length; i++) {
                 String error = errors[i].trim();
@@ -830,8 +864,13 @@ public class IDEFrame extends JFrame {
                               + "</body></html>";
             outputArea.setText(htmlResult);
         } catch (Exception ex) {
-            String err = "<html><body style='font-family: monospace; color: red; white-space: pre;'>Unexpected error: "
-                       + escapeHtml(ex.toString()) + "</body></html>";
+            long endTime = System.currentTimeMillis();
+            long executionTime = endTime - startTime;
+            
+            String err = "<html><body style='font-family: monospace; color: red; white-space: pre;'>" +
+                        "<span style='color: red; font-weight: bold;'>❌ ERROR INESPERADO</span><br>" +
+                        "<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>" + executionTime + " ms</b></span><br>" +
+                        "Unexpected error: " + escapeHtml(ex.toString()) + "</body></html>";
             outputArea.setText(err);
         }
     }
@@ -871,6 +910,8 @@ public class IDEFrame extends JFrame {
 
     // Nuevo: Optimización de código
     private void runCodeOptimization() {
+        long startTime = System.currentTimeMillis();
+        
         try {
             String code = codeEditor.getText();
             
@@ -880,20 +921,39 @@ public class IDEFrame extends JFrame {
                 return;
             }
             
+            // Calcular tamaño original (en bytes)
+            int originalSize = code.getBytes().length;
+            
             CodeOptimizer optimizer = new CodeOptimizer();
             CodeOptimizer.OptimizationResult result = optimizer.optimize(code);
+            
+            // Calcular tamaño optimizado (en bytes)
+            int optimizedSize = result.optimizedCode.getBytes().length;
+            int sizeDifference = originalSize - optimizedSize;
+            double reductionPercentage = originalSize > 0 ? (sizeDifference * 100.0 / originalSize) : 0;
+            
+            long endTime = System.currentTimeMillis();
+            long executionTime = endTime - startTime;
             
             StringBuilder output = new StringBuilder();
             output.append("<html><body style='font-family: monospace;'>");
             
             if (result.success) {
                 output.append("<span style='color: green; font-weight: bold; font-size: 14px;'>")
-                      .append("✅ OPTIMIZACIÓN EXITOSA</span><br><br>");
+                      .append("✅ OPTIMIZACIÓN EXITOSA</span><br>");
+                output.append("<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>").append(executionTime).append(" ms</b></span><br><br>");
                 
                 output.append("<span style='color: blue; font-weight: bold;'>📊 ESTADÍSTICAS:</span><br>");
                 output.append("  • Comentarios eliminados: <b>").append(result.commentsRemoved).append("</b><br>");
                 output.append("  • Espacios optimizados: <b>").append(result.spacesOptimized).append(" caracteres</b><br>");
                 output.append("  • Subexpresiones comunes eliminadas: <b>").append(result.subexpressionsEliminated).append("</b><br><br>");
+                
+                output.append("<span style='color: blue; font-weight: bold;'>💾 TAMAÑO DEL ARCHIVO:</span><br>");
+                output.append("  • Tamaño original: <b>").append(originalSize).append(" bytes</b><br>");
+                output.append("  • Tamaño optimizado: <b>").append(optimizedSize).append(" bytes</b><br>");
+                output.append("  • Reducción: <b>").append(sizeDifference).append(" bytes</b>");
+                output.append(" (<span style='color: ").append(sizeDifference > 0 ? "green" : "orange").append(";'>")
+                      .append(String.format("%.2f%%", reductionPercentage)).append("</span>)<br><br>");
                 
                 output.append("<span style='color: blue; font-weight: bold;'>📝 LOG DE OPTIMIZACIÓN:</span><br>");
                 output.append("<div style='background-color: #f0f0f0; padding: 10px; border-left: 3px solid #4CAF50;'>");
@@ -945,7 +1005,8 @@ public class IDEFrame extends JFrame {
                 
             } else {
                 output.append("<span style='color: red; font-weight: bold; font-size: 14px;'>")
-                      .append("❌ OPTIMIZACIÓN FALLIDA</span><br><br>");
+                      .append("❌ OPTIMIZACIÓN FALLIDA</span><br>");
+                output.append("<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>").append(executionTime).append(" ms</b></span><br><br>");
                 output.append("<span style='color: red;'>Error: ")
                       .append(escapeHtml(result.errorMessage))
                       .append("</span><br><br>");
@@ -960,8 +1021,12 @@ public class IDEFrame extends JFrame {
             outputArea.setText(output.toString());
             
         } catch (Exception e) {
+            long endTime = System.currentTimeMillis();
+            long executionTime = endTime - startTime;
+            
             String errorOutput = "<html><body style='font-family: monospace;'>" +
                                "<span style='color: red; font-weight: bold;'>❌ ERROR INESPERADO</span><br>" +
+                               "<span style='color: blue;'>⏱️ Tiempo de ejecución: <b>" + executionTime + " ms</b></span><br>" +
                                "<span style='color: red;'>Excepción: " + escapeHtml(e.getMessage()) + "</span><br>" +
                                "<span style='color: gray;'>Por favor, reporte este error.</span>" +
                                "</body></html>";
