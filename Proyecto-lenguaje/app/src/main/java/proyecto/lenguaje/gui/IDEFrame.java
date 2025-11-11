@@ -674,7 +674,7 @@ public class IDEFrame extends JFrame {
             }
             
             result.append("<br>");
-        }
+        } 
     }
     
     // Clase auxiliar para almacenar resultados de expresiones
@@ -682,15 +682,12 @@ public class IDEFrame extends JFrame {
         String originalExpression;
         String prefixNotation;
         ArithmeticExpressionConverter.ConversionResult tripletsResult;
-        ArithmeticExpressionConverter.ConversionResult quadruplesResult;
         
         ExpressionResult(String original, String prefix, 
-                        ArithmeticExpressionConverter.ConversionResult triplets,
-                        ArithmeticExpressionConverter.ConversionResult quadruples) {
+                        ArithmeticExpressionConverter.ConversionResult triplets) {
             this.originalExpression = original;
             this.prefixNotation = prefix;
             this.tripletsResult = triplets;
-            this.quadruplesResult = quadruples;
         }
     }
     
@@ -719,11 +716,7 @@ public class IDEFrame extends JFrame {
                 converter.resetTemporals();
                 ArithmeticExpressionConverter.ConversionResult triplets = converter.convertToTriplets(node);
                 
-                // Generar cuádruplos
-                converter.resetTemporals();
-                ArithmeticExpressionConverter.ConversionResult quadruples = converter.convertToQuadruples(node);
-                
-                results.add(new ExpressionResult(original, prefix, triplets, quadruples));
+                results.add(new ExpressionResult(original, prefix, triplets));
                 
             } catch (Exception e) {
                 // Si hay error al procesar una expresión, continuar con las otras

@@ -72,15 +72,22 @@ public class CodeOptimizer {
             String optimized = eliminateCommonSubexpressions(withoutExtraSpaces);
             optimizationLog.add("  ✓ Subexpresiones eliminadas: " + subexpressionMap.size() + "\n");
             
-            // Si se encontraron subexpresiones, agregar las definiciones al inicio
+            // Si se encontraron subexpresiones, agregar las definiciones al inicio con formato válido
             if (!subexpressionMap.isEmpty()) {
                 optimizationLog.add("\nSubexpresiones extraídas:");
                 StringBuilder definitions = new StringBuilder();
+                definitions.append("-- Variables de subexpresiones comunes (generadas por optimización)\n");
                 for (Map.Entry<String, String> entry : subexpressionMap.entrySet()) {
                     definitions.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
                     optimizationLog.add("  " + entry.getKey() + " = " + entry.getValue());
                 }
+                definitions.append("\n-- Código optimizado\n");
                 optimized = definitions.toString() + optimized;
+            }
+            
+            // Asegurar que el código termina con salto de línea
+            if (!optimized.endsWith("\n")) {
+                optimized += "\n";
             }
             
             optimizationLog.add("\n=== OPTIMIZACIÓN COMPLETADA ===");
@@ -154,83 +161,166 @@ public class CodeOptimizer {
     
     /**
      * Optimiza espacios en blanco innecesarios
+     * Mantiene la sintaxis válida de Haskell
      */
     private String optimizeSpaces(String code) {
-        // Eliminar espacios múltiples
-        String result = code.replaceAll("[ \\t]+", " ");
+        StringBuilder result = new StringBuilder();
+        String[] lines = code.split("\n");
         
-        // Eliminar espacios al inicio y final de líneas
-        result = result.replaceAll("(?m)^\\s+|\\s+$", "");
+        for (String line : lines) {
+            // Ignorar líneas vacías
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+            
+            // Normalizar espacios múltiples a uno solo, pero mantener al menos uno
+            String optimizedLine = line.replaceAll("[ \\t]+", " ");
+            
+            // Eliminar espacios al inicio y final de la línea
+            optimizedLine = optimizedLine.trim();
+            
+            // Asegurar espacio correcto alrededor del operador '='
+            // Formato: variable = expresión
+            optimizedLine = optimizedLine.replaceAll("\\s*=\\s*", " = ");
+            
+            // IMPORTANTE: Detectar números negativos y no agregar espacio después del signo menos
+            // Patrón: = -número o = -variable
+            optimizedLine = optimizedLine.replaceAll("=\\s+-\\s*([0-9])", "= -$1");
+            
+            // Asegurar espacio alrededor de operadores aritméticos binarios
+            // Pero solo si no están dentro de strings y no son signos negativos
+            if (!optimizedLine.contains("\"") && !optimizedLine.contains("'")) {
+                // Para operadores que NO son el signo menos después de =
+                optimizedLine = optimizedLine.replaceAll("\\s*([+*/%^])\\s*", " $1 ");
+                
+                // Para el operador menos, solo si NO es un signo negativo unario
+                // (es decir, si hay algo antes del menos que no sea = o un operador)
+                optimizedLine = optimizedLine.replaceAll("([a-zA-Z0-9_'])\\s*-\\s*", "$1 - ");
+            }
+            
+            // Limpiar espacios múltiples que puedan haberse generado
+            optimizedLine = optimizedLine.replaceAll("  +", " ");
+            
+            result.append(optimizedLine).append("\n");
+        }
         
-        // Eliminar líneas vacías múltiples
-        result = result.replaceAll("\\n{3,}", "\n\n");
+        // Eliminar líneas vacías al final
+        String resultStr = result.toString().trim();
         
-        // Eliminar espacios alrededor de operadores (opcional, más agresivo)
-        // result = result.replaceAll("\\s*([=+\\-*/()\\[\\]{},:;])\\s*", "$1");
+        // Asegurar que termina con un salto de línea
+        if (!resultStr.isEmpty() && !resultStr.endsWith("\n")) {
+            resultStr += "\n";
+        }
         
-        return result.trim();
+        return resultStr;
     }
     
     /**
      * Elimina subexpresiones comunes (CSE)
      * Identifica expresiones que aparecen múltiples veces y las extrae en variables
+     * Genera código sintácticamente válido
      */
     private String eliminateCommonSubexpressions(String code) {
         String[] lines = code.split("\n");
         Map<String, Integer> expressionCount = new HashMap<>();
+        Map<String, String> lineContexts = new HashMap<>();
         
         // Fase 1: Identificar subexpresiones comunes
         for (String line : lines) {
+            // Ignorar líneas vacías
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+            
             List<String> expressions = extractExpressions(line);
             for (String expr : expressions) {
                 if (isOptimizableExpression(expr)) {
                     expressionCount.put(expr, expressionCount.getOrDefault(expr, 0) + 1);
+                    lineContexts.put(expr, line);
                 }
             }
         }
         
-        // Fase 2: Crear variables temporales para expresiones que aparecen más de una vez
+        // Fase 2: Crear variables temporales solo para expresiones que aparecen más de una vez
+        Map<String, String> replacements = new HashMap<>();
         for (Map.Entry<String, Integer> entry : expressionCount.entrySet()) {
             if (entry.getValue() > 1) {
-                String tempVar = "cse_" + tempVarCounter++;
+                String tempVar = "cse" + tempVarCounter;
+                tempVarCounter++;
                 subexpressionMap.put(tempVar, entry.getKey());
+                replacements.put(entry.getKey(), tempVar);
             }
         }
         
         // Fase 3: Reemplazar expresiones comunes con variables temporales
         StringBuilder result = new StringBuilder();
         for (String line : lines) {
-            String optimizedLine = line;
-            for (Map.Entry<String, String> entry : subexpressionMap.entrySet()) {
-                // Reemplazar la expresión con la variable temporal
-                optimizedLine = optimizedLine.replace(entry.getValue(), entry.getKey());
+            // Ignorar líneas vacías
+            if (line.trim().isEmpty()) {
+                continue;
             }
+            
+            String optimizedLine = line;
+            
+            // Reemplazar cada expresión común con su variable temporal
+            for (Map.Entry<String, String> entry : replacements.entrySet()) {
+                String expression = entry.getKey();
+                String tempVar = entry.getValue();
+                
+                // Solo reemplazar si la línea no es la definición de una variable CSE
+                if (!optimizedLine.startsWith(tempVar + " =")) {
+                    // Reemplazar la expresión completa
+                    optimizedLine = optimizedLine.replace(expression, tempVar);
+                }
+            }
+            
             result.append(optimizedLine).append("\n");
         }
         
-        return result.toString().trim();
+        return result.toString();
     }
     
     /**
-     * Extrae expresiones de una línea de código
+     * Extrae expresiones aritméticas de una línea de código
+     * Solo extrae expresiones válidas en Haskell
      */
     private List<String> extractExpressions(String line) {
         List<String> expressions = new ArrayList<>();
         
-        // Buscar expresiones aritméticas/lógicas (simplificado)
-        Pattern pattern = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_']*\\s*[+\\-*/]\\s*[a-zA-Z_][a-zA-Z0-9_']*)");
-        Matcher matcher = pattern.matcher(line);
-        
-        while (matcher.find()) {
-            expressions.add(matcher.group(1).trim());
+        // Ignorar si la línea es solo una asignación simple (variable = valor)
+        if (line.matches("^[a-zA-Z_][a-zA-Z0-9_']*\\s*=\\s*[a-zA-Z0-9_']+\\s*$")) {
+            return expressions;
         }
         
-        // Buscar llamadas a funciones con argumentos
-        pattern = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_']*\\s+[a-zA-Z_][a-zA-Z0-9_']*\\s+[a-zA-Z_][a-zA-Z0-9_']*)");
-        matcher = pattern.matcher(line);
+        // Buscar expresiones aritméticas binarias: var op var o num op num
+        // Ejemplos: x + y, a * b, 10 + 20
+        Pattern arithPattern = Pattern.compile(
+            "([a-zA-Z_][a-zA-Z0-9_']*|\\d+(?:\\.\\d+)?)\\s*([+\\-*/%^])\\s*([a-zA-Z_][a-zA-Z0-9_']*|\\d+(?:\\.\\d+)?)"
+        );
+        Matcher matcher = arithPattern.matcher(line);
         
         while (matcher.find()) {
-            expressions.add(matcher.group(1).trim());
+            String left = matcher.group(1);
+            String op = matcher.group(2);
+            String right = matcher.group(3);
+            
+            // Reconstruir con formato consistente (un espacio alrededor del operador)
+            String normalizedExpr = left + " " + op + " " + right;
+            expressions.add(normalizedExpr);
+        }
+        
+        // Buscar expresiones con paréntesis simples: (expr)
+        Pattern parenPattern = Pattern.compile(
+            "\\(([a-zA-Z_][a-zA-Z0-9_']*|\\d+(?:\\.\\d+)?)\\s*([+\\-*/%^])\\s*([a-zA-Z_][a-zA-Z0-9_']*|\\d+(?:\\.\\d+)?)\\)"
+        );
+        matcher = parenPattern.matcher(line);
+        
+        while (matcher.find()) {
+            String inner = matcher.group(1) + " " + matcher.group(2) + " " + matcher.group(3);
+            // Solo agregar si es diferente de las expresiones ya encontradas
+            if (!expressions.contains(inner)) {
+                expressions.add(inner);
+            }
         }
         
         return expressions;
@@ -238,18 +328,39 @@ public class CodeOptimizer {
     
     /**
      * Determina si una expresión es optimizable
+     * Solo optimiza expresiones aritméticas no triviales
      */
     private boolean isOptimizableExpression(String expr) {
-        // No optimizar expresiones muy simples
-        if (expr.length() < 5) return false;
+        if (expr == null || expr.isEmpty()) {
+            return false;
+        }
         
-        // No optimizar si contiene solo una variable
-        if (!expr.matches(".*[+\\-*/\\s].*")) return false;
+        // Debe tener al menos un operador
+        if (!expr.matches(".*[+\\-*/%^].*")) {
+            return false;
+        }
         
-        // No optimizar literales simples
-        if (expr.matches("\\d+")) return false;
+        // No optimizar expresiones muy cortas (menos de 3 caracteres sin espacios)
+        String compact = expr.replaceAll("\\s+", "");
+        if (compact.length() < 3) {
+            return false;
+        }
         
-        return true;
+        // No optimizar literales numéricos simples
+        if (expr.matches("^\\d+(\\.\\d+)?$")) {
+            return false;
+        }
+        
+        // No optimizar strings
+        if (expr.contains("\"") || expr.contains("'")) {
+            return false;
+        }
+        
+        // Debe contener al menos una variable o dos números con operador
+        boolean hasVariable = expr.matches(".*[a-zA-Z_][a-zA-Z0-9_']*.*");
+        boolean hasOperator = expr.matches(".*[+\\-*/%^].*");
+        
+        return hasVariable && hasOperator;
     }
     
     /**

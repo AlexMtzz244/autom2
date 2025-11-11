@@ -168,16 +168,30 @@ public class Parser {
                    keyword.equals("loop") || keyword.equals("ciclo");
         }
         
-        return ty == Token.Type.IDENTIFIER_VAR || ty == Token.Type.IDENTIFIER_TYPE ||
-               ty == Token.Type.INTEGER || ty == Token.Type.FLOAT ||
-               ty == Token.Type.STRING || ty == Token.Type.CHAR ||
-               ty == Token.Type.BOOLEAN ||
-               ty == Token.Type.TUPLE_START || ty == Token.Type.LIST_START;
+        // Allow unary - to start a primary (unary negation)
+        if (ty == Token.Type.OPERATOR) {
+            String v = t.getValue();
+            if ("-".equals(v)) return true;
+        }
+
+     return ty == Token.Type.IDENTIFIER_VAR || ty == Token.Type.IDENTIFIER_TYPE ||
+         ty == Token.Type.INTEGER || ty == Token.Type.FLOAT ||
+         ty == Token.Type.STRING || ty == Token.Type.CHAR ||
+         ty == Token.Type.BOOLEAN ||
+         ty == Token.Type.TUPLE_START || ty == Token.Type.LIST_START;
     }
 
     private AstNode parsePrimary() {
         if (isAtEnd()) throw error("unexpected end of input");
         Token t = peek();
+        
+        // NUEVO: Manejo de operadores unarios (negación con -)
+        if (t.getType() == Token.Type.OPERATOR && t.getValue().equals("-")) {
+            advance(); // consumir el operador -
+            AstNode operand = parsePrimary(); // parsear recursivamente el operando
+            // Crear un nodo de operación unaria (negación)
+            return new UnaryOpNode("-", operand);
+        }
         
         // Check for cycle keywords first
         if (t.getType() == Token.Type.KEYWORD) {

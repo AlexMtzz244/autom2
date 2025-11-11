@@ -2,43 +2,274 @@
 -- EJEMPLO COMPLETO CON COMENTARIOS
 -- ====================================
 
--- Variables básicas
+{- 
+   PROYECTO: Mini IDE - Evaluador de Lenguaje Haskell
+   AUTOR: Equipo de Desarrollo
+   FECHA: 2025
+   DESCRIPCIÓN: Archivo de ejemplo completo que demuestra
+   todas las características del lenguaje soportadas
+-}
+
+-- ====================================
+-- SECCIÓN 1: VARIABLES BÁSICAS
+-- ====================================
+
+-- Variables numéricas enteras
 x = 42  -- la respuesta a todo
-y = 10
+y = 10  -- segunda variable
 z = x + y  -- suma de x e y
 
-{- Función principal
-   Demuestra el uso de comentarios
-   en diferentes contextos -}
-main = resultado
+a = 100  -- centena
+b = 50   -- mitad de a
+c = 25   -- cuarto de a
 
--- Operaciones aritméticas
-suma = x + y       -- suma
-resta = x - y      -- resta  
-multiplicacion = x * y  -- multiplicación
-division = x / y   -- división
+{- Variables con valores negativos -}
+temperatura = -15  -- temperatura bajo cero
+deuda = -500       -- cantidad negativa
+altitud = -200     -- metros bajo el nivel del mar
+
+-- Variables con decimales
+pi = 3.14159       -- constante pi
+e = 2.71828        -- constante de Euler
+precio = 99.99     -- precio con centavos
+descuento = 0.15   -- 15% de descuento
+
+-- ====================================
+-- SECCIÓN 2: OPERACIONES ARITMÉTICAS
+-- ====================================
+
+{- Operaciones básicas -}
+suma = x + y           -- suma: 42 + 10 = 52
+resta = x - y          -- resta: 42 - 10 = 32
+multiplicacion = x * y -- multiplicación: 42 * 10 = 420
+division = x / y       -- división: 42 / 10 = 4.2
+
+{- Operaciones con múltiples términos -}
+calculo1 = x + y + z   -- suma múltiple
+calculo2 = a - b - c   -- resta múltiple
+calculo3 = x * y * z   -- producto múltiple
+
+-- Operaciones con precedencia
+expr1 = x + y * z      -- 42 + (10 * 52) = 562
+expr2 = a - b / c      -- 100 - (50 / 25) = 98
+expr3 = x * y + z      -- (42 * 10) + 52 = 472
+
+{- Operaciones con paréntesis -}
+expr4 = (x + y) * z    -- (42 + 10) * 52 = 2704
+expr5 = (a - b) / c    -- (100 - 50) / 25 = 2
+expr6 = x * (y + z)    -- 42 * (10 + 52) = 2604
+
+-- Operaciones complejas
+complejo1 = (x + y) * (a - b)  -- (52) * (50) = 2600
+complejo2 = a / (b + c)        -- 100 / (50 + 25) = 1.333
+complejo3 = (x * y) + (a / b)  -- 420 + 2 = 422
+
+-- ====================================
+-- SECCIÓN 3: CADENAS DE TEXTO
+-- ====================================
+
+{- Strings y caracteres -}
+nombre = "Juan"        -- nombre de persona
+apellido = "Pérez"     -- apellido
+ciudad = "Madrid"      -- ciudad
+pais = "España"        -- país
+
+-- Más strings
+saludo = "Hola Mundo"  -- saludo clásico
+mensaje = "Bienvenido" -- mensaje de bienvenida
+titulo = "Ejemplo"     -- título del programa
+version = "v1.0"       -- versión del software
+
+{- Caracteres individuales -}
+letra = 'a'            -- letra minúscula
+mayuscula = 'A'        -- letra mayúscula
+digito = '7'           -- dígito como carácter
+simbolo = '@'          -- símbolo especial
+
+-- ====================================
+-- SECCIÓN 4: VALORES BOOLEANOS
+-- ====================================
+
+-- Valores de verdad
+verdadero = True       -- valor verdadero
+falso = False          -- valor falso
+
+{- Estados booleanos -}
+activo = True          -- sistema activo
+completado = False     -- tarea incompleta
+verificado = True      -- verificación exitosa
+autorizado = False     -- sin autorización
+
+-- Más booleanos
+disponible = True      -- recurso disponible
+ocupado = False        -- no ocupado
+conectado = True       -- conexión establecida
+bloqueado = False      -- no bloqueado
+
+-- ====================================
+-- SECCIÓN 5: LISTAS
+-- ====================================
 
 {- 
-   Listas de ejemplo
-   Diferentes tipos de datos
+   Listas homogéneas
+   Todos los elementos del mismo tipo
 -}
-numeros = [1, 2, 3, 4, 5]  -- lista de enteros
-nombres = ["Ana", "Luis"]  -- lista de strings
 
--- Tuplas
-punto = (10, 20)  -- coordenadas x, y
-persona = ("Juan", 30, True)  -- nombre, edad, activo
+-- Listas de números
+numeros = [1, 2, 3, 4, 5]          -- enteros consecutivos
+pares = [2, 4, 6, 8, 10]           -- números pares
+impares = [1, 3, 5, 7, 9]          -- números impares
+primos = [2, 3, 5, 7, 11, 13]      -- números primos
 
--- Booleanos
-verdadero = True   -- valor verdadero
-falso = False      -- valor falso
+-- Listas de decimales
+precios = [10.99, 20.50, 15.75]    -- precios de productos
+temperaturas = [22.5, 23.1, 21.8]  -- mediciones de temperatura
+porcentajes = [0.10, 0.25, 0.50]   -- porcentajes decimales
+
+{- Listas de strings -}
+nombres = ["Ana", "Luis", "María", "Carlos"]  -- nombres de personas
+ciudades = ["Madrid", "Barcelona", "Valencia"] -- ciudades españolas
+colores = ["rojo", "azul", "verde", "amarillo"] -- colores básicos
+
+-- Listas de booleanos
+estados = [True, False, True, True]   -- estados diversos
+flags = [False, False, True, False]   -- banderas de control
+checks = [True, True, True, False]    -- verificaciones
+
+{- Listas especiales -}
+listaVacia = []                       -- lista vacía
+unElemento = [42]                     -- lista con un solo elemento
+muchos = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  -- lista más larga
+
+-- ====================================
+-- SECCIÓN 6: TUPLAS
+-- ====================================
+
+{- 
+   Tuplas heterogéneas
+   Pueden contener diferentes tipos
+-}
+
+-- Tuplas de dos elementos (pares)
+punto = (10, 20)       -- coordenadas x, y
+origen = (0, 0)        -- punto de origen
+destino = (100, 200)   -- punto de destino
+
+{- Tuplas de tres elementos (tripletas) -}
+persona = ("Juan", 30, True)           -- nombre, edad, activo
+empleado = ("María", 25, False)        -- datos de empleado
+producto = ("Laptop", 1200.50, True)   -- nombre, precio, disponible
+
+-- Tuplas de cuatro elementos
+registro = ("Admin", "2025-01-15", 100, True)  -- registro completo
+medicion = (22.5, "Celsius", "Madrid", True)   -- medición de temperatura
+
+{- Tuplas especiales -}
+tuplaVacia = ()                        -- tupla vacía
+tuplaUno = (42)                        -- un solo elemento (no es tupla real)
+tuplaPar = (True, False)               -- par booleano
+
+-- ====================================
+-- SECCIÓN 7: OPERACIONES COMPLEJAS
+-- ====================================
+
+{- Cálculos matemáticos avanzados -}
+promedio = (x + y + z) / 3             -- promedio de tres números
+cuadrado = x * x                       -- x al cuadrado
+cubo = x * x * x                       -- x al cubo
+
+-- Fórmulas
+areaRectangulo = x * y                 -- área = base * altura
+perimetroRectangulo = x + x + y + y    -- perímetro del rectángulo
+volumenCubo = x * x * x                -- volumen de un cubo
+
+{- Conversiones -}
+fahrenheit = (temperatura * 9) / 5 + 32    -- Celsius a Fahrenheit
+euros = precio * 0.92                       -- Dólares a Euros
+kilometros = 1609 * 10                      -- Millas a kilómetros
+
+-- ====================================
+-- SECCIÓN 8: EXPRESIONES ANIDADAS
+-- ====================================
+
+{- 
+   Expresiones con múltiples niveles
+   de paréntesis y operaciones
+-}
+
+anidado1 = ((x + y) * (a - b)) / z     -- expresión compleja nivel 1
+anidado2 = (a / (b + c)) * x           -- expresión compleja nivel 2
+anidado3 = ((x * y) + (a * b)) / (c + z) -- expresión compleja nivel 3
+
+-- Más expresiones anidadas
+formula1 = (x + (y * (z + a)))         -- anidación derecha
+formula2 = (((x + y) + z) + a)         -- anidación izquierda
+formula3 = ((x * y) + (z * a)) / (b - c) -- combinación compleja
+
+-- ====================================
+-- SECCIÓN 9: COMBINACIONES
+-- ====================================
+
+{- Combinando diferentes operaciones -}
+resultado1 = suma + resta              -- combinación de variables
+resultado2 = multiplicacion - division -- otra combinación
+resultado3 = calculo1 * calculo2       -- producto de cálculos
+
+-- Operaciones sobre operaciones
+meta1 = (suma * 2) + (resta * 3)       -- múltiples factores
+meta2 = (promedio + cuadrado) / 2      -- operaciones derivadas
+meta3 = (areaRectangulo + volumenCubo) -- combinación de fórmulas
 
 {- NOTA IMPORTANTE:
-   Todos estos comentarios serán
-   ignorados durante el análisis léxico
-   y no generarán ningún error -}
+   Este es un ejemplo extenso que demuestra:
+   1. Variables de diferentes tipos
+   2. Operaciones aritméticas básicas y complejas
+   3. Manejo de strings y caracteres
+   4. Valores booleanos
+   5. Listas homogéneas
+   6. Tuplas heterogéneas
+   7. Expresiones con precedencia
+   8. Paréntesis y anidación
+   9. Comentarios de una línea y multilínea
+   10. Organización en secciones
+   
+   Todos los comentarios serán ignorados
+   durante el análisis léxico y sintáctico.
+-}
 
--- Resultado final
-resultado = suma + resta  -- cálculo final
+-- ====================================
+-- SECCIÓN 10: VARIABLES FINALES
+-- ====================================
 
--- Fin del ejemplo
+{- Función principal -}
+main = resultadoFinal  -- punto de entrada
+
+-- Cálculo del resultado final
+subtotal = suma + resta + multiplicacion  -- subtotal
+impuestos = subtotal * 0.16               -- 16% de impuestos
+resultadoFinal = subtotal + impuestos     -- total con impuestos
+
+{- Variables de control -}
+contador = 0           -- contador inicial
+limite = 100           -- límite máximo
+paso = 5               -- incremento
+indice = 1             -- índice inicial
+
+-- Estados del sistema
+sistemaActivo = True   -- sistema operativo
+modoDebug = False      -- modo debug desactivado
+modoProduccion = True  -- modo producción activo
+
+-- ====================================
+-- FIN DEL EJEMPLO COMPLETO
+-- ====================================
+
+{-
+   ¡Gracias por usar nuestro Mini IDE!
+   Este archivo demuestra todas las capacidades
+   del analizador léxico, sintáctico y semántico.
+   
+   Total de líneas: ~250
+   Total de variables: ~120
+   Total de comentarios: ~80
+-}

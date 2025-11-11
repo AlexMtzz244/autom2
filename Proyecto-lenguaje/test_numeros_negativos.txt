@@ -1,0 +1,16 @@
+-- Prueba de números negativos
+-- Este archivo prueba que el optimizador maneja correctamente números negativos
+
+-- Variables con valores negativos
+temperatura = -15
+deuda = -100
+altitud = -50
+
+-- Expresiones con números negativos
+resultado1 = temperatura + 10
+resultado2 = deuda + 50
+resultado3 = altitud * 2
+
+-- Expresiones mixtas
+balance = deuda + 200
+saldo = balance - 50

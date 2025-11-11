@@ -1,29 +1,90 @@
--- Ejemplo de código con comentarios y subexpresiones comunes
--- Este código será optimizado por el sistema
+-- ===================================
+-- EJEMPLO PARA OPTIMIZACIÓN DE CÓDIGO
+-- ===================================
+
+{- Este archivo contiene:
+   1. Comentarios extensos que serán eliminados
+   2. Espacios innecesarios que serán optimizados
+   3. Subexpresiones comunes que serán extraídas
+   
+   El resultado será código válido y más eficiente
+-}
 
 -- Variables básicas
-x = 10
-y = 20
-z = 5
+x = 10     -- valor de x
+y = 20     -- valor de y
+z = 5      -- valor de z
 
-{- Cálculos con subexpresiones comunes
-   Nota: x + y aparece múltiples veces -}
-resultado1 = x + y      -- primera aparición de x + y
-resultado2 = (x + y) * 2    -- segunda aparición de x + y
-resultado3 = x + y + z  -- tercera aparición de x + y
+{- 
+   SECCIÓN 1: Subexpresiones Comunes
+   La expresión x + y aparece múltiples veces
+-}
 
--- Más subexpresiones comunes
-a = 100
-b = 50
-c = a + b       -- primera aparición de a + b
-d = a + b + 10  -- segunda aparición de a + b
-e = (a + b) * 3 -- tercera aparición de a + b
+resultado1 = x + y              -- primera aparición de x + y
+resultado2 = (x + y) * 2        -- segunda aparición de x + y
+resultado3 = x + y + z          -- tercera aparición de x + y
+resultado4 = (x + y) - z        -- cuarta aparición de x + y
 
-{- Operaciones adicionales
-   con espacios innecesarios -}
-suma     =     x    +    y    +    z   -- espacios múltiples
-resta    =     x    -    y            -- más espacios
-producto =     x    *    y            -- aún más espacios
+-- Más variables
+a = 100    -- centena
+b = 50     -- mitad
+c = 25     -- cuarto
 
--- Comentario final: este código tiene muchos comentarios y espacios
--- que serán eliminados durante la optimización
+{-
+   SECCIÓN 2: Más Subexpresiones
+   La expresión a + b aparece varias veces
+-}
+
+suma1 = a + b          -- primera aparición de a + b
+suma2 = a + b + 10     -- segunda aparición de a + b
+suma3 = (a + b) * 3    -- tercera aparición de a + b
+suma4 = a + b - c      -- cuarta aparición de a + b
+
+-- Expresiones con y * z (subexpresión común)
+calculo1 = y * z           -- primera aparición de y * z
+calculo2 = x + y * z       -- segunda aparición de y * z
+calculo3 = (y * z) + a     -- tercera aparición de y * z
+
+{- SECCIÓN 3: Espacios Innecesarios
+   Estas líneas tienen espacios múltiples
+   que serán normalizados -}
+
+espaciado1     =     x    +    y    +    z       -- muchos espacios
+espaciado2     =     a    *    b    -    c       -- más espacios
+espaciado3     =     x    /    y                 -- espacios innecesarios
+
+-- Operaciones con b - c (subexpresión)
+operacion1 = b - c             -- primera aparición de b - c
+operacion2 = a + (b - c)       -- segunda aparición de b - c
+operacion3 = (b - c) * 2       -- tercera aparición de b - c
+
+{-
+   SECCIÓN 4: Comentarios Extensos
+   Todos estos comentarios serán eliminados
+   para producir código más limpio y compacto
+   
+   El optimizador mantendrá la funcionalidad
+   pero eliminará toda esta documentación
+-}
+
+-- Más cálculos con subexpresiones
+temp1 = x * y              -- x * y aparece varias veces
+temp2 = x * y + z          -- segunda vez
+temp3 = (x * y) - a        -- tercera vez
+
+-- Expresiones finales
+final1 = resultado1 + suma1    -- usa variables optimizadas
+final2 = calculo1 + operacion1 -- combina resultados
+final3 = temp1 + espaciado1    -- más combinaciones
+
+{- 
+   NOTA FINAL:
+   Este código será transformado en una versión
+   optimizada que:
+   - No tendrá comentarios
+   - Tendrá espacios normalizados
+   - Extraerá subexpresiones comunes en variables CSE
+   - Mantendrá la validez sintáctica y semántica
+-}
+
+-- Fin del ejemplo

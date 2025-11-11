@@ -118,6 +118,21 @@ class BinaryOpNode extends AstNode {
 	public AstNode getRight() { return right; }
 }
 
+// Unary operator: op operand (e.g. -x)
+class UnaryOpNode extends AstNode {
+	public final String op;
+	public final AstNode operand;
+	public UnaryOpNode(String op, AstNode operand) { this.op = op; this.operand = operand; }
+	@Override protected void buildTree(StringBuilder sb, int indent) {
+		indent(sb, indent); sb.append("UnaryOp(").append(op).append(")\n");
+		operand.buildTree(sb, indent + 1);
+	}
+
+	// Métodos de acceso para otras clases del paquete
+	public String getOp() { return op; }
+	public AstNode getOperand() { return operand; }
+}
+
 // List node
 class ListNode extends AstNode {
 	public final List<AstNode> elements;
