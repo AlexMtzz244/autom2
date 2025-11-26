@@ -1,2 +1,5 @@
 Manifest-Version: 1.0
+Main-Class: proyecto.lenguaje.gui.IDEFrame
+Implementation-Title: Mini IDE - Haskell
+Implementation-Version: 1.0.0
 

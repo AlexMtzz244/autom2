@@ -37,6 +37,29 @@ application {
     mainClass = 'proyecto.lenguaje.gui.IDEFrame'
 }
 
+// Configurar el JAR para que sea ejecutable con todas las dependencias
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'proyecto.lenguaje.gui.IDEFrame',
+            'Implementation-Title': 'Mini IDE - Haskell',
+            'Implementation-Version': '1.0.0'
+        )
+    }
+    
+    // Incluir todas las dependencias en el JAR (Fat JAR)
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    // Evitar duplicados
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    // Nombre del archivo JAR
+    archiveBaseName = 'HaskellIDE'
+    archiveVersion = '1.0.0'
+}
+
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
